@@ -57,7 +57,7 @@ const App: React.FC = () => {
     const active = sessions.find((s) => s.id === activeId);
     if (!active) return;
 
-    setReadOnly(active.source !== 'WebUI' && active.active);
+    setReadOnly(active.source === 'WebUI' ? !active.active : active.active);
 
     const load = async () => {
       try {
@@ -138,6 +138,21 @@ const App: React.FC = () => {
     }
   };
 
+  const startSession = async () => {
+    if (!activeId) return;
+    try {
+      const data = await api.sendMessage(activeId, '/claude');
+      if (data.error) {
+        showToast(data.error || 'Failed to start', true);
+      } else if (data.response) {
+        setMessages((prev) => [...prev, { role: 'system' as const, content: data.response || '' }]);
+        setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, active: true } : s)));
+      }
+    } catch {
+      showToast('Failed to start session', true);
+    }
+  };
+
   const stopSession = async () => {
     if (!activeId) return;
     try {
@@ -160,16 +175,42 @@ const App: React.FC = () => {
     }
   };
 
-  const cdDir = async (name: string) => {
+  const enterDir = async (name: string) => {
     const newPath = currentDir === '~' ? '~/' + name : currentDir + '/' + name;
     try {
-      const data = await api.changeDir(newPath, activeId);
-      if (!data.error) {
-        const dirData = await api.listDir(data.dir || newPath, activeId);
-        setDirItems(dirData.items || []);
-        setCurrentDir(dirData.dir || newPath);
-      }
+      const dirData = await api.listDir(newPath, activeId);
+      setDirItems(dirData.items || []);
+      setCurrentDir(dirData.dir || newPath);
     } catch {}
+  };
+
+  const goUpDir = async () => {
+    const parts = currentDir.split('/').filter(Boolean);
+    if (parts.length <= 1) {
+      setCurrentDir('~');
+      try {
+        const dirData = await api.listDir('~', activeId);
+        setDirItems(dirData.items || []);
+      } catch {}
+      return;
+    }
+    parts.pop();
+    const newPath = '/' + parts.join('/');
+    try {
+      const dirData = await api.listDir(newPath, activeId);
+      setDirItems(dirData.items || []);
+      setCurrentDir(dirData.dir || newPath);
+    } catch {}
+  };
+
+  const selectDir = async (dir: string) => {
+    try {
+      await api.changeDir(dir, activeId);
+      showToast(`Directory set to: ${dir}`);
+      setShowDir(false);
+    } catch {
+      showToast('Failed to set directory', true);
+    }
   };
 
   const handlePwd = async () => {
@@ -246,6 +287,7 @@ const App: React.FC = () => {
         readOnly={readOnly}
         onInputChange={setInput}
         onSend={sendMessage}
+        onStart={startSession}
         onStop={stopSession}
         onOpenDir={openDirModal}
         onPwd={handlePwd}
@@ -256,7 +298,9 @@ const App: React.FC = () => {
           currentDir={currentDir}
           items={dirItems}
           onClose={() => setShowDir(false)}
-          onCd={cdDir}
+          onEnter={enterDir}
+          onGoUp={goUpDir}
+          onSelect={selectDir}
         />
       )}
       {showSettings && (

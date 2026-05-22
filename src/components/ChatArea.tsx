@@ -9,6 +9,7 @@ interface Props {
   readOnly: boolean;
   onInputChange: (v: string) => void;
   onSend: () => void;
+  onStart: () => void;
   onStop: () => void;
   onOpenDir: () => void;
   onPwd: () => void;
@@ -23,6 +24,7 @@ export const ChatArea: React.FC<Props> = ({
   readOnly,
   onInputChange,
   onSend,
+  onStart,
   onStop,
   onOpenDir,
   onPwd,
@@ -61,7 +63,32 @@ export const ChatArea: React.FC<Props> = ({
         {messages.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">//</div>
-            <div>{session ? 'awaiting input...' : 'select a session'}</div>
+            {session && !session.active && session.source === 'WebUI' ? (
+              <>
+                <div>Session created. Confirm work directory, then start.</div>
+                <button
+                  onClick={onStart}
+                  style={{
+                    marginTop: '16px',
+                    padding: '10px 24px',
+                    background: 'var(--accent)',
+                    color: 'var(--bg-void)',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                  }}
+                >
+                  Start Session
+                </button>
+              </>
+            ) : (
+              <div>{session ? 'awaiting input...' : 'select a session'}</div>
+            )}
           </div>
         )}
         {messages.map((m, i) => (
