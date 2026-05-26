@@ -125,13 +125,6 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
             <h4>{t('settings.general')}</h4>
             <div className="form-row">
               <div className="form-group">
-                <label>{t('settings.platform')}</label>
-                <select value={form.platform} onChange={(e) => update('platform', e.target.value)}>
-                  <option value="feishu">Feishu</option>
-                  <option value="telegram">Telegram</option>
-                </select>
-              </div>
-              <div className="form-group">
                 <label>{t('settings.port')}</label>
                 <input type="number" value={form.port} onChange={(e) => update('port', parseInt(e.target.value) || 17534)} />
               </div>
