@@ -6,6 +6,7 @@ export interface Session {
   chat_id: string;
   work_dir: string;
   active: boolean;
+  claude_session_id?: string;
   created_at: string;
 }
 
@@ -66,3 +67,5 @@ export interface PlatformInfo {
 }
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
+
+export type SourceFilter = 'all' | 'WebUI' | 'Feishu' | 'Telegram' | 'TUI';

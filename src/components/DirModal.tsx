@@ -1,26 +1,32 @@
 import React from 'react';
+import { useI18n } from '@/i18n';
 
 interface Props {
   currentDir: string;
   items: string[];
+  showHidden: boolean;
   onClose: () => void;
   onEnter: (name: string) => void;
   onGoUp: () => void;
   onSelect: (dir: string) => void;
+  onToggleHidden: () => void;
 }
 
 export const DirModal: React.FC<Props> = ({
   currentDir,
   items,
+  showHidden,
   onClose,
   onEnter,
   onGoUp,
   onSelect,
+  onToggleHidden,
 }) => {
+  const { t } = useI18n();
   const isRoot = currentDir === '~' || currentDir === '/';
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-testid="dir-modal">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{currentDir}</h3>
@@ -35,15 +41,11 @@ export const DirModal: React.FC<Props> = ({
           )}
           {items.map((item, i) => (
             <div
-              key={i}
+              key={`${item}-${i}`}
               className="dir-item"
-              onClick={() => item.endsWith('/') && onEnter(item.slice(0, -1))}
-              style={{
-                cursor: item.endsWith('/') ? 'pointer' : 'default',
-                opacity: item.endsWith('/') ? 1 : 0.5,
-              }}
+              onClick={() => onEnter(item.slice(0, -1))}
             >
-              <span className="icon">{item.endsWith('/') ? '+' : '-'}</span>
+              <span className="icon">+</span>
               {item}
             </div>
           ))}
@@ -57,6 +59,24 @@ export const DirModal: React.FC<Props> = ({
             alignItems: 'center',
           }}
         >
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showHidden}
+              onChange={onToggleHidden}
+            />
+            {t('dir.show_hidden')}
+          </label>
           <span
             style={{
               fontSize: '11px',
@@ -64,7 +84,7 @@ export const DirModal: React.FC<Props> = ({
               fontFamily: 'var(--font-mono)',
             }}
           >
-            {items.length} items
+            {t('dir.items', { count: items.length })}
           </span>
           <button
             onClick={() => onSelect(currentDir)}
@@ -82,7 +102,7 @@ export const DirModal: React.FC<Props> = ({
               letterSpacing: '0.8px',
             }}
           >
-            Select Directory
+            {t('dir.select')}
           </button>
         </div>
       </div>

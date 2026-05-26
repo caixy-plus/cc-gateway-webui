@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { useI18n, type Locale } from '@/i18n';
 import type { Session, Message } from '@/types';
 
 interface Props {
@@ -7,13 +8,15 @@ interface Props {
   input: string;
   sending: boolean;
   readOnly: boolean;
+  starting?: boolean;
+  workDir: string;
+  locale: Locale;
   onInputChange: (v: string) => void;
   onSend: () => void;
   onStart: () => void;
   onStop: () => void;
   onOpenDir: () => void;
-  onPwd: () => void;
-  onResetDir: () => void;
+  onLocaleChange: (locale: Locale) => void;
 }
 
 export const ChatArea: React.FC<Props> = ({
@@ -22,101 +25,142 @@ export const ChatArea: React.FC<Props> = ({
   input,
   sending,
   readOnly,
+  starting,
+  workDir,
+  locale,
   onInputChange,
   onSend,
   onStart,
   onStop,
   onOpenDir,
-  onPwd,
-  onResetDir,
+  onLocaleChange,
 }) => {
+  const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const isWebUIInactive = session && session.source === 'WebUI' && !session.active;
+  const canChangeDir = session && session.source === 'WebUI' && !session.claude_session_id;
+
   return (
     <div className="main">
       <div className="chat-header">
         <div className={`status ${session?.active ? '' : 'inactive'}`} />
-        <h2>{session?.title || 'Select a session'}</h2>
+        <h2>{session?.title || t('chat.select_session')}</h2>
         <div className="session-info">
           {session && (
             <span className="info-pill">
-              {session.source} / {session.platform} / {session.active ? 'ACTIVE' : 'STOPPED'}
+              {session.source} / {session.platform} / {session.active ? t('chat.active') : t('chat.stopped')}
             </span>
           )}
         </div>
         {session && session.source === 'WebUI' && session.active && (
           <div className="actions">
-            <button onClick={onStop}>STOP</button>
+            <button onClick={onStop}>{t('chat.stop')}</button>
           </div>
         )}
+        <div className="lang-pill" data-testid="chat-lang-pill">
+          <button className={locale === 'en' ? 'active' : ''} onClick={() => onLocaleChange('en')}>
+            EN
+          </button>
+          <button className={locale === 'zh' ? 'active' : ''} onClick={() => onLocaleChange('zh')}>
+            中文
+          </button>
+        </div>
       </div>
       <div className="toolbar">
-        <button onClick={onOpenDir}>ls</button>
-        <button onClick={onPwd}>pwd</button>
-        <button onClick={onResetDir}>cd ~</button>
+        <div className={`work-dir ${session?.active ? 'active' : ''}`}>
+          {workDir}
+        </div>
+        <button onClick={onOpenDir} disabled={!canChangeDir}>
+          {t('chat.change_dir')}
+        </button>
       </div>
       <div className="messages">
         {messages.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">//</div>
-            {session && !session.active && session.source === 'WebUI' ? (
+            {isWebUIInactive ? (
               <>
-                <div>Session created. Confirm work directory, then start.</div>
+                <div>{t('chat.session_created_hint')}</div>
                 <button
+                  className="restart-btn"
                   onClick={onStart}
-                  style={{
-                    marginTop: '16px',
-                    padding: '10px 24px',
-                    background: 'var(--accent)',
-                    color: 'var(--bg-void)',
-                    border: 'none',
-                    borderRadius: 'var(--radius)',
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 600,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.8px',
-                  }}
+                  disabled={starting}
+                  style={{ marginTop: '16px' }}
                 >
-                  Start Session
+                  {starting ? t('chat.starting') : t('chat.start_session')}
                 </button>
               </>
             ) : (
-              <div>{session ? 'awaiting input...' : 'select a session'}</div>
+              <div>{session ? t('chat.awaiting_input') : t('chat.select_a_session')}</div>
             )}
           </div>
         )}
         {messages.map((m, i) => (
           <div key={i} className={`message ${m.role}`}>
-            {m.content}
+            {m.role === 'system' ? m.content.replace(/\n+/g, ' ') : m.content}
           </div>
         ))}
+        {sending && (
+          <div className="message assistant typing-indicator" data-testid="typing-indicator">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot" />
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       <div className="input-area">
-        <div className="input-wrapper">
-          <input
-            value={input}
-            onChange={(e) => onInputChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
-            placeholder={
-              readOnly
-                ? 'read-only: platform session'
-                : sending
-                ? 'transmitting...'
-                : 'enter command...'
-            }
-            disabled={readOnly || sending || !session}
-          />
-        </div>
-        <button onClick={onSend} disabled={readOnly || sending || !session}>
-          EXEC
-        </button>
+        {isWebUIInactive && messages.length > 0 ? (
+          <div className="restart-area">
+            <span className="restart-hint">{t('chat.session_stopped_hint')}</span>
+            <button className="restart-btn" onClick={onStart} disabled={starting}>
+              {starting ? t('chat.restarting') : t('chat.restart_session')}
+            </button>
+          </div>
+        ) : isWebUIInactive && messages.length === 0 ? (
+          <>
+            <div className="input-wrapper">
+              <input
+                data-testid="message-input"
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+                placeholder={t('chat.input_placeholder')}
+                disabled
+              />
+            </div>
+            <button disabled data-testid="send-btn">
+              {t('chat.exec')}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="input-wrapper">
+              <input
+                data-testid="message-input"
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+                placeholder={
+                  readOnly
+                    ? t('chat.readonly_placeholder')
+                    : sending
+                    ? t('chat.sending_placeholder')
+                    : t('chat.input_placeholder')
+                }
+                disabled={readOnly || sending || !session}
+              />
+            </div>
+            <button onClick={onSend} disabled={readOnly || sending || !session} data-testid="send-btn">
+              {t('chat.exec')}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
