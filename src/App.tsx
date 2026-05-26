@@ -52,6 +52,21 @@ const App: React.FC = () => {
 
   const dismissToast = useCallback(() => setToast(null), []);
 
+  const loadConfig = useCallback(async () => {
+    try {
+      const data = await api.getConfig();
+      setConfig(data.config);
+      return data.config;
+    } catch {
+      showToast(t('settings.load_failed'), true);
+      return null;
+    }
+  }, [showToast, t]);
+
+  useEffect(() => {
+    void loadConfig();
+  }, [loadConfig]);
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -152,7 +167,8 @@ const App: React.FC = () => {
 
   const createSession = async () => {
     try {
-      const defaultDir = config?.default_dir || '~';
+      const currentConfig = config || (await loadConfig());
+      const defaultDir = currentConfig?.default_dir || '~';
       const data = await api.createSession('New Session', defaultDir);
       if (data.session) {
         setSessions((prev) => [...prev, data.session!]);
@@ -301,15 +317,6 @@ const App: React.FC = () => {
       setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, work_dir: dir } : s)));
     } catch {
       showToast(t('app.failed_set_dir'), true);
-    }
-  };
-
-  const loadConfig = async () => {
-    try {
-      const data = await api.getConfig();
-      setConfig(data.config);
-    } catch {
-      showToast(t('settings.load_failed'), true);
     }
   };
 
