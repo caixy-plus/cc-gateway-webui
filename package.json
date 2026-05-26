@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 5173",
     "build": "tsc && vite build",
-    "build:embed": "npm run build && ./scripts/copy-to-backend.sh",
+    "build:embed": "npm run build && node ./scripts/copy-to-backend.mjs",
     "preview": "vite preview",
     "test:e2e": "playwright test"
   },

@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$SCRIPT_DIR/../../../cc-gateway"
+BACKEND_DIR="$SCRIPT_DIR/../../cc-gateway"
 DIST_DIR="$SCRIPT_DIR/../dist"
 TARGET_DIR="$BACKEND_DIR/webui/dist"
 

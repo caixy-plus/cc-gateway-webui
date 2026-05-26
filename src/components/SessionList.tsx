@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/i18n';
+import { api } from '@/api/client';
 import type { Session, PlatformInfo, ThemeMode, SourceFilter } from '@/types';
 
 function formatTime(iso: string): string {
@@ -30,6 +31,17 @@ function platformIcon(platform: string): string {
     case 'telegram': return '✈️';
     default: return '🔌';
   }
+}
+
+type UpdateState = 'available' | 'installing' | 'install_started' | 'install_error';
+
+interface UpdateDialogState {
+  open: boolean;
+  state: UpdateState;
+  latest: string;
+  current: string;
+  body: string;
+  error: string;
 }
 
 interface Props {
@@ -68,31 +80,69 @@ export const SessionList: React.FC<Props> = ({
   const { t } = useI18n();
   const [checking, setChecking] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
-  const [releaseInfo, setReleaseInfo] = useState<{ version: string; body: string } | null>(null);
+  const [updateMsgKind, setUpdateMsgKind] = useState<'ok' | 'error'>('ok');
+  const [updateDialog, setUpdateDialog] = useState<UpdateDialogState>({
+    open: false,
+    state: 'available',
+    latest: '',
+    current: version,
+    body: '',
+    error: '',
+  });
 
   const checkUpdate = async () => {
     if (checking) return;
     setChecking(true);
     setUpdateMsg(null);
-    setReleaseInfo(null);
     try {
-      const res = await fetch('https://api.github.com/repos/caixinyun/cc-gateway/releases/latest');
-      if (!res.ok) throw new Error('Failed to check');
-      const data = await res.json();
-      const latest = (data.tag_name as string)?.replace(/^v/, '') || '';
-      if (latest && latest !== version) {
-        setUpdateMsg(t('sidebar.update_available', { version: latest }));
-        const body = (data.body as string) || '';
-        setReleaseInfo({ version: latest, body });
+      const data = await api.checkUpdate();
+      if (data.error) throw new Error(data.error);
+      const latest = (data.latest_version || data.latest || '').replace(/^v/, '');
+      const current = data.current_version || data.current || version;
+      const body = data.release_notes || data.body || '';
+      const hasUpdate = data.update_available ?? data.has_update ?? (latest !== '' && latest !== version);
+      if (hasUpdate) {
+        setUpdateDialog({
+          open: true,
+          state: 'available',
+          latest,
+          current,
+          body,
+          error: '',
+        });
       } else {
+        setUpdateMsgKind('ok');
         setUpdateMsg(t('sidebar.up_to_date'));
+        window.setTimeout(() => setUpdateMsg(null), 4000);
       }
-    } catch {
+    } catch (err) {
+      setUpdateMsgKind('error');
       setUpdateMsg(t('sidebar.check_failed'));
+      window.setTimeout(() => setUpdateMsg(null), 4000);
     } finally {
       setChecking(false);
-      setTimeout(() => setUpdateMsg(null), 4000);
     }
+  };
+
+  const installUpdate = async () => {
+    if (updateDialog.state === 'installing') return;
+    setUpdateDialog((prev) => ({ ...prev, state: 'installing', error: '' }));
+    try {
+      const data = await api.installUpdate();
+      if (data.error) throw new Error(data.error);
+      setUpdateDialog((prev) => ({ ...prev, state: 'install_started', error: '' }));
+    } catch (err) {
+      setUpdateDialog((prev) => ({
+        ...prev,
+        state: 'install_error',
+        error: err instanceof Error ? err.message : t('update.install_failed'),
+      }));
+    }
+  };
+
+  const closeUpdateDialog = () => {
+    if (updateDialog.state === 'installing') return;
+    setUpdateDialog((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -117,13 +167,71 @@ export const SessionList: React.FC<Props> = ({
         </div>
       </div>
 
-      {releaseInfo && (
-        <div className="changelog-box">
-          <div className="changelog-header">
-            <span>{t('sidebar.changelog', { version: releaseInfo.version })}</span>
-            <button onClick={() => setReleaseInfo(null)}>×</button>
+      {updateDialog.open && (
+        <div className="modal-overlay" onClick={closeUpdateDialog}>
+          <div className="modal-content update-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('update.title')}</h3>
+              <button onClick={closeUpdateDialog} disabled={updateDialog.state === 'installing'}>×</button>
+            </div>
+            <div className="update-modal-body">
+              <div className={`update-hero ${updateDialog.state}`}>
+                <div className="update-icon">
+                  {updateDialog.state === 'available' && '↑'}
+                  {updateDialog.state === 'install_error' && '!'}
+                  {updateDialog.state === 'installing' && '↻'}
+                  {updateDialog.state === 'install_started' && '✓'}
+                </div>
+                <div>
+                  <div className="update-status-title">
+                    {updateDialog.state === 'available' && t('update.available_title', { version: updateDialog.latest })}
+                    {updateDialog.state === 'install_error' && t('update.install_error_title')}
+                    {updateDialog.state === 'installing' && t('update.installing_title')}
+                    {updateDialog.state === 'install_started' && t('update.install_started_title')}
+                  </div>
+                  <div className="update-status-subtitle">
+                    {updateDialog.state === 'available' && t('update.available_desc')}
+                    {updateDialog.state === 'install_error' && updateDialog.error}
+                    {updateDialog.state === 'installing' && t('update.installing_desc')}
+                    {updateDialog.state === 'install_started' && t('update.install_started_desc')}
+                  </div>
+                </div>
+              </div>
+
+              <div className="update-version-grid">
+                <div>
+                  <span>{t('update.current_version')}</span>
+                  <strong>v{updateDialog.current || version}</strong>
+                </div>
+                <div>
+                  <span>{t('update.latest_version')}</span>
+                  <strong>{updateDialog.latest ? `v${updateDialog.latest}` : '--'}</strong>
+                </div>
+              </div>
+
+              {updateDialog.body && (
+                <div className="update-notes">
+                  <div className="update-notes-title">{t('update.release_notes')}</div>
+                  <div className="update-notes-body">{stripMarkdown(updateDialog.body)}</div>
+                </div>
+              )}
+            </div>
+            <div className="update-modal-actions">
+              <button className="secondary-btn" onClick={closeUpdateDialog} disabled={updateDialog.state === 'installing'}>
+                {t('update.close')}
+              </button>
+              {updateDialog.state === 'install_error' && (
+                <button className="secondary-btn" onClick={installUpdate}>
+                  {t('update.retry')}
+                </button>
+              )}
+              {updateDialog.state === 'available' && (
+                <button className="primary-btn" onClick={installUpdate}>
+                  {t('update.install_now')}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="changelog-body">{stripMarkdown(releaseInfo.body)}</div>
         </div>
       )}
 
@@ -233,7 +341,7 @@ export const SessionList: React.FC<Props> = ({
           </button>
           {checking && <span style={{ opacity: 0.6 }}>{t('sidebar.checking')}</span>}
           {updateMsg && (
-            <span className={`version-msg ${updateMsg.includes('available') ? 'available' : 'ok'}`}>
+            <span className={`version-msg ${updateMsgKind}`}>
               {updateMsg}
             </span>
           )}

@@ -22,6 +22,14 @@ export const zh: Record<TranslationKey, string> = {
   'app.restart_failed': '重启失败',
   'app.ok': '确定',
 
+  // Delete confirm
+  'delete.title': '删除会话',
+  'delete.message': '确定删除「{title}」？',
+  'delete.warning': '此操作会删除会话记录和历史文件，无法撤销。',
+  'delete.cancel': '取消',
+  'delete.confirm': '确认删除',
+  'delete.deleting': '删除中...',
+
   // ChatArea
   'chat.select_session': '选择会话',
   'chat.session_created_hint': '会话已创建。确认工作目录，然后启动。',
@@ -62,6 +70,28 @@ export const zh: Record<TranslationKey, string> = {
   'sidebar.off': '关闭',
   'sidebar.all_sources': '全部来源',
   'sidebar.connected': '已连接',
+
+  // Update modal
+  'update.title': '检查更新',
+  'update.checking_title': '正在检查新版本',
+  'update.checking_desc': '正在连接 GitHub Releases，请稍候...',
+  'update.available_title': '发现新版本 v{version}',
+  'update.available_desc': '可以立即下载并安装。Windows 下会在当前进程退出后替换可执行文件并重启守护进程。',
+  'update.up_to_date_title': '已是最新版本',
+  'update.up_to_date_desc': '当前安装的 cc-gateway 已经是最新版本。',
+  'update.error_title': '检查更新失败',
+  'update.installing_title': '正在启动更新',
+  'update.installing_desc': '正在向本地网关发送更新请求...',
+  'update.install_error_title': '启动更新失败',
+  'update.install_started_title': '更新已开始',
+  'update.install_started_desc': '网关会在后台下载并安装更新，完成后守护进程将自动重启。',
+  'update.current_version': '当前版本',
+  'update.latest_version': '最新版本',
+  'update.release_notes': '更新日志',
+  'update.close': '关闭',
+  'update.retry': '重试',
+  'update.install_now': '立即更新',
+  'update.install_failed': '启动更新失败',
 
   // DirModal
   'dir.items': '{count} 个项目',

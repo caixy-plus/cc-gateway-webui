@@ -29,6 +29,8 @@ const App: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('WebUI');
   const [restarting, setRestarting] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { theme, setTheme } = useTheme();
   const evtSourceRef = useRef<EventSource | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -183,7 +185,16 @@ const App: React.FC = () => {
 
   const deleteSession = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm(t('app.delete_confirm'))) return;
+    const target = sessions.find((s) => s.id === id);
+    if (target) {
+      setDeleteTarget(target);
+    }
+  };
+
+  const confirmDeleteSession = async () => {
+    if (!deleteTarget || deleting) return;
+    const id = deleteTarget.id;
+    setDeleting(true);
     try {
       await api.deleteSession(id);
       setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -191,9 +202,12 @@ const App: React.FC = () => {
         setActiveId(null);
         setMessages([]);
       }
+      setDeleteTarget(null);
       showToast(t('app.session_deleted'));
     } catch {
       showToast(t('app.failed_delete_session'), true);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -410,6 +424,32 @@ const App: React.FC = () => {
           onClose={() => setShowSettings(false)}
           onSave={saveConfig}
         />
+      )}
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('delete.title')}</h3>
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting}>×</button>
+            </div>
+            <div className="confirm-modal-body">
+              <div className="confirm-icon">!</div>
+              <div className="confirm-copy">
+                <div className="confirm-title">{t('delete.message', { title: deleteTarget.title })}</div>
+                <div className="confirm-subtitle">{t('delete.warning')}</div>
+                <div className="confirm-session-path">{deleteTarget.work_dir}</div>
+              </div>
+            </div>
+            <div className="confirm-modal-actions">
+              <button className="secondary-btn" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                {t('delete.cancel')}
+              </button>
+              <button className="danger-btn" onClick={confirmDeleteSession} disabled={deleting}>
+                {deleting ? t('delete.deleting') : t('delete.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {toast && <Toast message={toast.msg} isError={toast.error} onClose={dismissToast} />}
     </>

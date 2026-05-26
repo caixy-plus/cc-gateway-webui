@@ -2,6 +2,21 @@ import type { Session, GatewayConfig, PlatformInfo } from '@/types';
 
 const API_BASE = '';
 
+export interface UpdateCheckResponse {
+  status?: 'available' | 'up_to_date' | string;
+  update_available?: boolean;
+  has_update?: boolean;
+  current?: string;
+  current_version?: string;
+  latest?: string;
+  latest_version?: string;
+  release_notes?: string;
+  body?: string;
+  download_url?: string;
+  url?: string;
+  error?: string;
+}
+
 async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -88,6 +103,12 @@ export const api = {
   getPlatforms: () => fetchJSON<{ platforms: PlatformInfo[] }>('/api/platforms'),
 
   getVersion: () => fetchJSON<{ version: string }>('/api/version'),
+
+  checkUpdate: () => fetchJSON<UpdateCheckResponse>('/api/update/check'),
+
+  installUpdate: () => fetchJSON<{ status?: string; command?: string; error?: string }>('/api/update', {
+    method: 'POST',
+  }),
 
   restart: () => fetchJSON<{ status?: string; command?: string; error?: string }>('/api/restart', {
     method: 'POST',

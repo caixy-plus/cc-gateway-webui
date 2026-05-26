@@ -20,6 +20,14 @@ export const en = {
   'app.restart_failed': 'Failed to restart',
   'app.ok': 'OK',
 
+  // Delete confirm
+  'delete.title': 'Delete Session',
+  'delete.message': 'Delete "{title}"?',
+  'delete.warning': 'This removes the session record and history file. This action cannot be undone.',
+  'delete.cancel': 'Cancel',
+  'delete.confirm': 'Delete',
+  'delete.deleting': 'Deleting...',
+
   // ChatArea
   'chat.select_session': 'Select a session',
   'chat.session_created_hint': 'Session created. Confirm work directory, then start.',
@@ -60,6 +68,28 @@ export const en = {
   'sidebar.off': 'OFF',
   'sidebar.all_sources': 'All Sources',
   'sidebar.connected': 'connected',
+
+  // Update modal
+  'update.title': 'Check for Updates',
+  'update.checking_title': 'Checking for a new version',
+  'update.checking_desc': 'Connecting to GitHub Releases. This should only take a moment...',
+  'update.available_title': 'Version v{version} is available',
+  'update.available_desc': 'You can download and install it now. On Windows, the executable is replaced after the updater exits and the daemon restarts automatically.',
+  'update.up_to_date_title': 'You are up to date',
+  'update.up_to_date_desc': 'The installed cc-gateway version is already the latest release.',
+  'update.error_title': 'Update check failed',
+  'update.installing_title': 'Starting update',
+  'update.installing_desc': 'Sending the update request to the local gateway...',
+  'update.install_error_title': 'Failed to start update',
+  'update.install_started_title': 'Update started',
+  'update.install_started_desc': 'The gateway will download and install the update in the background, then restart the daemon.',
+  'update.current_version': 'Current Version',
+  'update.latest_version': 'Latest Version',
+  'update.release_notes': 'Release Notes',
+  'update.close': 'Close',
+  'update.retry': 'Retry',
+  'update.install_now': 'Update Now',
+  'update.install_failed': 'Failed to start update',
 
   // DirModal
   'dir.items': '{count} items',
