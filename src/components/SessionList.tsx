@@ -262,6 +262,9 @@ export const SessionList: React.FC<Props> = ({
               </div>
               <div className="meta">
                 <span className="work-dir" title={s.work_dir}>{s.work_dir}</span>
+                <span className="provider-tag" title="agent provider">
+                  {s.provider || 'claude'}
+                </span>
               </div>
             </div>
             {s.source === 'WebUI' && (

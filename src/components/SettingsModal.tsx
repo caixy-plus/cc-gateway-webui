@@ -8,7 +8,7 @@ interface Props {
   onSave: (config: Partial<GatewayConfig>) => void;
 }
 
-const NEED_RESTART_KEYS = new Set(['platform', 'port']);
+const NEED_RESTART_KEYS = new Set(['port']);
 
 export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
   const { t } = useI18n();
@@ -178,15 +178,52 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
           </div>
 
           <div className="settings-section">
-            <h4>{t('settings.claude')}</h4>
+            <h4>{t('settings.agent')}</h4>
             <div className="form-row">
               <div className="form-group">
-                <label>{t('settings.cli_path')}</label>
-                <input type="text" value={form.claude.cli_path} onChange={(e) => update('claude.cli_path', e.target.value)} />
+                <label>{t('settings.agent_default')}</label>
+                <select value={form.agent.default} onChange={(e) => update('agent.default', e.target.value)}>
+                  <option value="claude">{t('settings.agent_claude')}</option>
+                  <option value="cursor">{t('settings.agent_cursor')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('settings.agent_claude')} / {t('settings.cli_path')}</label>
+                <input
+                  type="text"
+                  value={form.agent.claude.cli_path || ''}
+                  onChange={(e) => update('agent.claude.cli_path', e.target.value)}
+                />
               </div>
               <div className="form-group">
-                <label>{t('settings.default_args')}</label>
-                <input type="text" value={form.claude.default_args} onChange={(e) => update('claude.default_args', e.target.value)} />
+                <label>{t('settings.agent_claude')} / {t('settings.default_args')}</label>
+                <input
+                  type="text"
+                  value={form.agent.claude.default_args || ''}
+                  onChange={(e) => update('agent.claude.default_args', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('settings.agent_cursor')} / {t('settings.cli_path')}</label>
+                <input
+                  type="text"
+                  value={form.agent.cursor.cli_path || ''}
+                  onChange={(e) => update('agent.cursor.cli_path', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('settings.agent_cursor')} / {t('settings.default_args')}</label>
+                <input
+                  type="text"
+                  value={form.agent.cursor.default_args || ''}
+                  onChange={(e) => update('agent.cursor.default_args', e.target.value)}
+                />
               </div>
             </div>
           </div>

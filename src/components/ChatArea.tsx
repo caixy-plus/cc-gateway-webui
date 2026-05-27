@@ -43,7 +43,7 @@ export const ChatArea: React.FC<Props> = ({
   }, [messages]);
 
   const isWebUIInactive = session && session.source === 'WebUI' && !session.active;
-  const canChangeDir = session && session.source === 'WebUI' && !session.claude_session_id;
+  const canChangeDir = session && session.source === 'WebUI' && !session.provider_session_id;
 
   return (
     <div className="main">

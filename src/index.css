@@ -512,6 +512,18 @@ html, body {
   flex-shrink: 0;
 }
 
+.session-item .meta .provider-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+
 .session-item .delete-btn {
   opacity: 0;
   background: none;

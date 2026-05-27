@@ -6,7 +6,8 @@ export interface Session {
   chat_id: string;
   work_dir: string;
   active: boolean;
-  claude_session_id?: string;
+  provider?: string;
+  provider_session_id?: string | null;
   created_at: string;
 }
 
@@ -33,9 +34,20 @@ export interface GatewayConfig {
     max_lines: number;
     max_size_mb: number;
   };
-  claude: {
-    cli_path: string;
-    default_args: string;
+  agent: {
+    default: 'claude' | 'cursor';
+    claude: {
+      cli_path?: string;
+      default_args?: string;
+      mode?: string;
+      permission?: string;
+    };
+    cursor: {
+      cli_path?: string;
+      default_args?: string;
+      mode?: string;
+      permission?: string;
+    };
   };
   feishu: {
     enabled: boolean;
@@ -56,7 +68,7 @@ export interface GatewayConfig {
   show_thinking: boolean;
   media_retention_days: number;
   port: number;
-  platform: string;
+  session_retention_per_channel?: number;
 }
 
 export interface PlatformInfo {
