@@ -652,6 +652,10 @@ html, body {
   color: var(--success);
 }
 
+.version-info .version-msg.error {
+  color: var(--danger);
+}
+
 .icon-btn {
   width: 30px;
   height: 30px;

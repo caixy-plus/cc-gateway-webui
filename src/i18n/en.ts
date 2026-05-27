@@ -74,7 +74,7 @@ export const en = {
   'update.checking_title': 'Checking for a new version',
   'update.checking_desc': 'Connecting to GitHub Releases. This should only take a moment...',
   'update.available_title': 'Version v{version} is available',
-  'update.available_desc': 'You can download and install it now. On Windows, the executable is replaced after the updater exits and the daemon restarts automatically.',
+  'update.available_desc': 'You can download and install it now. The gateway will replace the executable and restart the daemon automatically.',
   'update.up_to_date_title': 'You are up to date',
   'update.up_to_date_desc': 'The installed cc-gateway version is already the latest release.',
   'update.error_title': 'Update check failed',

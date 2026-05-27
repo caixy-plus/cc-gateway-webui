@@ -76,7 +76,7 @@ export const zh: Record<TranslationKey, string> = {
   'update.checking_title': '正在检查新版本',
   'update.checking_desc': '正在连接 GitHub Releases，请稍候...',
   'update.available_title': '发现新版本 v{version}',
-  'update.available_desc': '可以立即下载并安装。Windows 下会在当前进程退出后替换可执行文件并重启守护进程。',
+  'update.available_desc': '可以立即下载并安装。网关会替换可执行文件并自动重启守护进程。',
   'update.up_to_date_title': '已是最新版本',
   'update.up_to_date_desc': '当前安装的 cc-gateway 已经是最新版本。',
   'update.error_title': '检查更新失败',
