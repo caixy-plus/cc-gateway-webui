@@ -147,6 +147,7 @@ export const en = {
   'webui.cannot_delete_active': 'Cannot delete an active session',
   'webui.home_dir_error': 'Could not determine home directory',
   'webui.failed_stop_session': 'Failed to stop session',
+  'webui.failed_restart_session': 'Failed to restart session',
   'webui.failed_list_dir': 'Failed to list directory',
   'webui.failed_set_dir': 'Failed to set directory',
 } as const;

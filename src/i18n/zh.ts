@@ -149,6 +149,7 @@ export const zh: Record<TranslationKey, string> = {
   'webui.cannot_delete_active': '无法删除活动会话',
   'webui.home_dir_error': '无法确定 Home 目录',
   'webui.failed_stop_session': '停止会话失败',
+  'webui.failed_restart_session': '重启会话失败',
   'webui.failed_list_dir': '列出目录失败',
   'webui.failed_set_dir': '设置目录失败',
 };
