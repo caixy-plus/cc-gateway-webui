@@ -4,7 +4,7 @@ import { ChatArea } from '@/components/ChatArea';
 import { DirModal } from '@/components/DirModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { Toast } from '@/components/Toast';
-import { api, createEventSource } from '@/api/client';
+import { api, createEventSource, ApiError } from '@/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
@@ -51,6 +51,27 @@ const App: React.FC = () => {
   const showToast = useCallback((msg: string, error = false) => {
     setToast({ msg, error });
   }, []);
+
+  const errMsg = useCallback(
+    (e: unknown, fallback: string) => {
+      if (e instanceof ApiError && e.errorKey) {
+        const translated = t(e.errorKey as any);
+        // If missing in front-end dict, t() returns the key itself; fall back to backend message.
+        if (translated && translated !== e.errorKey) return translated;
+        // Do not show backend error text; log for debugging only.
+        // eslint-disable-next-line no-console
+        console.warn('[webui] Untranslated error_key from backend:', e.errorKey, e.message);
+        return t('app.error_generic');
+      }
+      if (e instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.warn('[webui] Error:', e.message);
+      }
+      // Do not show backend error text; only show local i18n fallback.
+      return fallback || t('app.error_generic');
+    },
+    [t]
+  );
 
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -137,7 +158,8 @@ const App: React.FC = () => {
         } else {
           setMessages([]);
         }
-      } catch {
+      } catch (e: unknown) {
+        showToast(errMsg(e, t('app.failed_list_dir')), true);
         setMessages([]);
       }
     };
@@ -178,8 +200,8 @@ const App: React.FC = () => {
         setActiveId(data.session.id);
         setMessages([]);
       }
-    } catch {
-      showToast(t('app.failed_create_session'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_create_session')), true);
     }
   };
 
@@ -204,8 +226,8 @@ const App: React.FC = () => {
       }
       setDeleteTarget(null);
       showToast(t('app.session_deleted'));
-    } catch {
-      showToast(t('app.failed_delete_session'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_delete_session')), true);
     } finally {
       setDeleting(false);
     }
@@ -237,7 +259,10 @@ const App: React.FC = () => {
       if (err instanceof DOMException && err.name === 'AbortError') {
         // Request was intentionally aborted (session switch); do nothing
       } else {
-        setMessages((prev) => [...prev, { role: 'system' as const, content: stripAnsi(t('app.failed_send')) }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'system' as const, content: stripAnsi(errMsg(err, t('app.failed_send'))) },
+        ]);
         setSending(false);
       }
     } finally {
@@ -257,8 +282,8 @@ const App: React.FC = () => {
       } else {
         setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, ...data.session, active: true } : s)));
       }
-    } catch {
-      showToast(t('app.failed_start'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_start')), true);
     } finally {
       setStarting(false);
     }
@@ -270,8 +295,8 @@ const App: React.FC = () => {
       await api.stopSession(activeId);
       setMessages((prev) => [...prev, { role: 'system' as const, content: t('app.session_stopped') }]);
       setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, active: false } : s)));
-    } catch {
-      showToast(t('app.failed_stop'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_stop')), true);
     }
   };
 
@@ -283,9 +308,9 @@ const App: React.FC = () => {
       const data = await api.listDir(dir, activeId, showHidden);
       setDirItems(data.items || []);
       setCurrentDir(data.dir || dir);
-    } catch {
+    } catch (e: unknown) {
       setDirItems([]);
-      showToast(t('app.failed_list_dir'), true);
+      showToast(errMsg(e, t('app.failed_list_dir')), true);
     }
   };
 
@@ -295,7 +320,9 @@ const App: React.FC = () => {
       const dirData = await api.listDir(newPath, activeId, showHidden);
       setDirItems(dirData.items || []);
       setCurrentDir(dirData.dir || newPath);
-    } catch {}
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_list_dir')), true);
+    }
   };
 
   const goUpDir = async () => {
@@ -305,7 +332,9 @@ const App: React.FC = () => {
       try {
         const dirData = await api.listDir('~', activeId, showHidden);
         setDirItems(dirData.items || []);
-      } catch {}
+      } catch (e: unknown) {
+        showToast(errMsg(e, t('app.failed_list_dir')), true);
+      }
       return;
     }
     parts.pop();
@@ -316,7 +345,9 @@ const App: React.FC = () => {
       const dirData = await api.listDir(newPath, activeId, showHidden);
       setDirItems(dirData.items || []);
       setCurrentDir(dirData.dir || newPath);
-    } catch {}
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_list_dir')), true);
+    }
   };
 
   const toggleHidden = () => {
@@ -329,8 +360,8 @@ const App: React.FC = () => {
       showToast(t('app.dir_set_to', { dir }));
       setShowDir(false);
       setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, work_dir: dir } : s)));
-    } catch {
-      showToast(t('app.failed_set_dir'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_set_dir')), true);
     }
   };
 
@@ -343,8 +374,8 @@ const App: React.FC = () => {
       } else {
         showToast(data.error || t('app.save_failed'), true);
       }
-    } catch {
-      showToast(t('app.failed_save_config'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_save_config')), true);
     }
   };
 
@@ -362,8 +393,8 @@ const App: React.FC = () => {
     try {
       const data = await api.restart();
       showToast(data.status === 'restarting' ? t('app.restarting') : (data.error || t('app.restart_requested')));
-    } catch {
-      showToast(t('app.restart_failed'), true);
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.restart_failed')), true);
     } finally {
       setRestarting(false);
     }

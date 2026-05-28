@@ -19,6 +19,7 @@ export const en = {
   'app.restart_requested': 'Restart requested',
   'app.restart_failed': 'Failed to restart',
   'app.ok': 'OK',
+  'app.error_generic': 'System error',
 
   // Delete confirm
   'delete.title': 'Delete Session',
@@ -137,6 +138,17 @@ export const en = {
   'platforms.mode': 'mode: {mode}',
   'platforms.allow': 'allow: {allow}',
   'platforms.connected': 'connected',
+
+  // Backend error keys (cc-gateway src/i18n/dict.rs)
+  'webui.empty_message': 'Empty message',
+  'webui.runtime_not_found': 'WebUI runtime not found',
+  'webui.no_active_session': 'No active session',
+  'webui.session_not_found': 'Session not found',
+  'webui.cannot_delete_active': 'Cannot delete an active session',
+  'webui.home_dir_error': 'Could not determine home directory',
+  'webui.failed_stop_session': 'Failed to stop session',
+  'webui.failed_list_dir': 'Failed to list directory',
+  'webui.failed_set_dir': 'Failed to set directory',
 } as const;
 
 export type TranslationKey = keyof typeof en;

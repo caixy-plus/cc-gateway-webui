@@ -21,6 +21,7 @@ export const zh: Record<TranslationKey, string> = {
   'app.restart_requested': '重启请求已发送',
   'app.restart_failed': '重启失败',
   'app.ok': '确定',
+  'app.error_generic': '系统错误',
 
   // Delete confirm
   'delete.title': '删除会话',
@@ -139,4 +140,15 @@ export const zh: Record<TranslationKey, string> = {
   'platforms.mode': '模式: {mode}',
   'platforms.allow': '允许: {allow}',
   'platforms.connected': '已连接',
+
+  // Backend error keys (cc-gateway src/i18n/dict.rs)
+  'webui.empty_message': '空消息',
+  'webui.runtime_not_found': '未找到 WebUI 运行时',
+  'webui.no_active_session': '没有活动会话',
+  'webui.session_not_found': '会话不存在',
+  'webui.cannot_delete_active': '无法删除活动会话',
+  'webui.home_dir_error': '无法确定 Home 目录',
+  'webui.failed_stop_session': '停止会话失败',
+  'webui.failed_list_dir': '列出目录失败',
+  'webui.failed_set_dir': '设置目录失败',
 };

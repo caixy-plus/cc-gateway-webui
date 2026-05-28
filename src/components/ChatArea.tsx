@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useI18n, type Locale } from '@/i18n';
 import type { Session, Message } from '@/types';
 
@@ -37,6 +37,7 @@ export const ChatArea: React.FC<Props> = ({
 }) => {
   const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isComposing, setIsComposing] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -102,7 +103,7 @@ export const ChatArea: React.FC<Props> = ({
         )}
         {messages.map((m, i) => (
           <div key={i} className={`message ${m.role}`}>
-            {m.role === 'system' ? m.content.replace(/\n+/g, ' ') : m.content}
+            {m.content}
           </div>
         ))}
         {sending && (
@@ -129,7 +130,15 @@ export const ChatArea: React.FC<Props> = ({
                 data-testid="message-input"
                 value={input}
                 onChange={(e) => onInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+                onKeyDown={(e) => {
+                  // IME: Enter may be used to confirm candidate selection; don't send while composing.
+                  // keyCode 229 is a common "IME processing" signal on some browsers.
+                  const native = e.nativeEvent as unknown as { isComposing?: boolean; keyCode?: number };
+                  const composing = isComposing || native.isComposing || native.keyCode === 229;
+                  if (e.key === 'Enter' && !e.shiftKey && !composing) onSend();
+                }}
                 placeholder={t('chat.input_placeholder')}
                 disabled
               />
@@ -145,7 +154,13 @@ export const ChatArea: React.FC<Props> = ({
                 data-testid="message-input"
                 value={input}
                 onChange={(e) => onInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSend()}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+                onKeyDown={(e) => {
+                  const native = e.nativeEvent as unknown as { isComposing?: boolean; keyCode?: number };
+                  const composing = isComposing || native.isComposing || native.keyCode === 229;
+                  if (e.key === 'Enter' && !e.shiftKey && !composing) onSend();
+                }}
                 placeholder={
                   readOnly
                     ? t('chat.readonly_placeholder')

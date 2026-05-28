@@ -17,14 +17,65 @@ export interface UpdateCheckResponse {
   error?: string;
 }
 
+export class ApiError extends Error {
+  errorKey?: string;
+
+  constructor(message: string, errorKey?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.errorKey = errorKey;
+  }
+}
+
+function tryParseJson(text: string): unknown | null {
+  const t = text.trim();
+  if (!t) return null;
+  // Some endpoints may not set content-type correctly; attempt JSON parse anyway.
+  if (!t.startsWith('{') && !t.startsWith('[')) return null;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return null;
+  }
+}
+
+function extractError(bodyJson: unknown): { message: string; errorKey?: string } {
+  const obj = bodyJson && typeof bodyJson === 'object' ? (bodyJson as any) : null;
+  const errorKey = obj && typeof obj.error_key === 'string' ? (obj.error_key as string) : undefined;
+  const message =
+    (obj && typeof obj.error === 'string' ? (obj.error as string) : '') ||
+    (obj && typeof obj.message === 'string' ? (obj.message as string) : '') ||
+    '';
+
+  // Avoid showing raw JSON as a message.
+  if (message) return { message, errorKey };
+  return { message: '', errorKey };
+}
+
 async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
     signal,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const bodyText = await res.text();
+  const bodyJson: unknown = (isJson ? tryParseJson(bodyText) : null) ?? tryParseJson(bodyText);
+
+  if (!res.ok) {
+    const extracted = extractError(bodyJson);
+    const errMsg = extracted.message || `HTTP ${res.status}`;
+    throw new ApiError(errMsg, extracted.errorKey);
+  }
+
+  if (bodyJson !== null) {
+    return bodyJson as T;
+  }
+  if (!bodyText) {
+    return {} as T;
+  }
+  return JSON.parse(bodyText) as T;
 }
 
 export const api = {
