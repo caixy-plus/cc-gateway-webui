@@ -117,6 +117,17 @@ const App: React.FC = () => {
     return () => clearInterval(iv);
   }, []);
 
+  const toggleRequirePairing = useCallback(async (platform: string, value: boolean) => {
+    // Optimistic update; revert on failure.
+    setPlatforms((prev) => prev.map((p) => (p.name === platform ? { ...p, require_pairing: value } : p)));
+    try {
+      const res = await api.setRequirePairing(platform, value);
+      if (res.error) throw new Error(res.error);
+    } catch {
+      setPlatforms((prev) => prev.map((p) => (p.name === platform ? { ...p, require_pairing: !value } : p)));
+    }
+  }, []);
+
   useEffect(() => {
     const fetchPairings = async () => {
       try {
@@ -437,6 +448,7 @@ const App: React.FC = () => {
         restarting={restarting}
         onOpenPairing={() => setShowPairing(true)}
         pairingCount={pairingCount}
+        onToggleRequirePairing={toggleRequirePairing}
       />
       <ChatArea
         session={activeSession}

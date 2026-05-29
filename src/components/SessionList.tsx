@@ -59,6 +59,7 @@ interface Props {
   onThemeChange: (theme: ThemeMode) => void;
   onRestart: () => void;
   onSourceFilterChange: (filter: SourceFilter) => void;
+  onToggleRequirePairing?: (platform: string, value: boolean) => void;
   restarting?: boolean;
   pairingCount?: number;
 }
@@ -78,6 +79,7 @@ export const SessionList: React.FC<Props> = ({
   onThemeChange,
   onRestart,
   onSourceFilterChange,
+  onToggleRequirePairing,
   restarting,
   pairingCount,
 }) => {
@@ -323,10 +325,27 @@ export const SessionList: React.FC<Props> = ({
           <div className="section-label">{t('sidebar.connected_platforms')}</div>
           {platforms.map((p) => (
             <div key={p.name} className="platform-row">
-              <span>{p.name}</span>
-              <span className={`platform-status ${p.enabled ? 'connected' : 'off'}`}>
-                {p.enabled ? t('sidebar.connected') : t('sidebar.off')}
-              </span>
+              <span className="platform-row-name">{platformIcon(p.name)} {p.name}</span>
+              <div className="platform-row-right">
+                <span className={`platform-status ${p.enabled ? 'connected' : 'off'}`}>
+                  {p.enabled ? t('sidebar.connected') : t('sidebar.off')}
+                </span>
+                {onToggleRequirePairing && (
+                  <button
+                    type="button"
+                    className={`pairing-switch ${p.require_pairing ? 'on' : 'off'}`}
+                    onClick={() => onToggleRequirePairing(p.name, !p.require_pairing)}
+                    title={t(p.require_pairing ? 'sidebar.pairing_on_hint' : 'sidebar.pairing_off_hint')}
+                    aria-label={t('settings.require_pairing')}
+                    aria-pressed={!!p.require_pairing}
+                  >
+                    <span className="pairing-switch-track">
+                      <span className="pairing-switch-thumb" />
+                    </span>
+                    <span className="pairing-switch-label">{t('sidebar.pairing_short')}</span>
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

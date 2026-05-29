@@ -587,10 +587,84 @@ html, body {
   color: var(--text-secondary);
 }
 
+.platforms-section .platform-row .platform-row-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: capitalize;
+}
+
+.platforms-section .platform-row .platform-row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .platforms-section .platform-row .platform-status {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+
+/* Quick require-pairing switch */
+.pairing-switch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.pairing-switch-track {
+  position: relative;
+  width: 26px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.pairing-switch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.18s ease;
+}
+
+.pairing-switch.on .pairing-switch-track {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.pairing-switch.on .pairing-switch-thumb {
+  left: 13px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.pairing-switch-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  transition: color 0.18s ease;
+}
+
+.pairing-switch.on .pairing-switch-label {
+  color: var(--accent);
+}
+
+.pairing-switch:hover .pairing-switch-track {
+  border-color: var(--accent);
 }
 
 .platforms-section .platform-row .platform-status.connected {
@@ -1538,6 +1612,8 @@ html, body {
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .settings-form .form-group {
@@ -1587,25 +1663,187 @@ html, body {
   cursor: pointer;
 }
 
-.settings-form .save-btn {
+.save-btn {
   background: var(--accent);
   color: var(--bg-void);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 9px 16px;
+  padding: 9px 18px;
   font-size: 11px;
   font-family: var(--font-mono);
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  align-self: flex-start;
   transition: all 0.15s ease;
 }
 
-.settings-form .save-btn:hover {
+.save-btn:hover:not(:disabled) {
   background: #d4b06e;
   box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Sticky settings footer */
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.settings-footer .pending-indicator {
+  margin-right: auto;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-footer .pending-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Single full-width field row */
+.settings-section .form-row.full {
+  grid-template-columns: 1fr;
+}
+
+/* Horizontal group of toggles */
+.settings-form .checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-bottom: 4px;
+}
+
+.settings-form .checkbox-group .checkbox-row {
+  gap: 8px;
+}
+
+/* Inline hint text under a field / toggle */
+.settings-form .field-hint {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: -2px;
+}
+
+/* Section header with an enabled-state badge */
+.settings-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section h4 .section-badge {
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+}
+
+.settings-section h4 .section-badge.on {
+  color: var(--success);
+  border-color: rgba(126, 188, 137, 0.4);
+  background: rgba(126, 188, 137, 0.08);
+}
+
+/* Pairing modal */
+.pairing-body {
+  padding: 8px 18px 18px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.pairing-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pairing-error button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pairing-section-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.pairing-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pairing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pairing-table thead tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.pairing-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle, var(--border));
+}
+
+.approval-state {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+}
+
+.approval-state.on {
+  color: var(--success);
+  border-color: rgba(126, 188, 137, 0.4);
+  background: rgba(126, 188, 137, 0.08);
+}
+
+.approval-state.off {
+  color: var(--text-muted);
 }
 
 /* Settings sections */

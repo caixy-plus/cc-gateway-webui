@@ -153,6 +153,12 @@ export const api = {
 
   getPlatforms: () => fetchJSON<{ platforms: PlatformInfo[] }>('/api/platforms'),
 
+  setRequirePairing: (platform: string, requirePairing: boolean) =>
+    fetchJSON<{ status?: string; platform?: string; require_pairing?: boolean; error?: string }>(
+      '/api/platforms/require_pairing',
+      { method: 'POST', body: JSON.stringify({ platform, require_pairing: requirePairing }) }
+    ),
+
   getVersion: () => fetchJSON<{ version: string }>('/api/version'),
 
   checkUpdate: () => fetchJSON<UpdateCheckResponse>('/api/update/check'),
@@ -180,6 +186,23 @@ export const api = {
     fetchJSON<{ status?: string; error?: string }>(
       '/api/pairing/reject',
       { method: 'POST', body: JSON.stringify({ pairing_code: pairingCode }) }
+    ),
+
+  listApprovedChats: () =>
+    fetchJSON<{ approved: Array<{ platform: string; chat_id: string; approved_at: string; enabled: boolean }> }>(
+      '/api/pairing/approved'
+    ),
+
+  setApprovalEnabled: (platform: string, chatId: string, enabled: boolean) =>
+    fetchJSON<{ status?: string; enabled?: boolean; error?: string }>(
+      '/api/pairing/approved/set_enabled',
+      { method: 'POST', body: JSON.stringify({ platform, chat_id: chatId, enabled }) }
+    ),
+
+  removeApproval: (platform: string, chatId: string) =>
+    fetchJSON<{ status?: string; error?: string }>(
+      '/api/pairing/approved/remove',
+      { method: 'POST', body: JSON.stringify({ platform, chat_id: chatId }) }
     ),
 };
 

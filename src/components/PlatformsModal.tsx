@@ -24,7 +24,6 @@ export const PlatformsModal: React.FC<Props> = ({ platforms, onClose }) => {
               <div>
                 <div className="platform-name">{p.name}</div>
                 {p.mode && <div className="platform-detail">{t('platforms.mode', { mode: p.mode })}</div>}
-                <div className="platform-detail">{t('platforms.allow', { allow: p.allow_from })}</div>
               </div>
               <div className="platform-status">{t('platforms.connected')}</div>
             </div>

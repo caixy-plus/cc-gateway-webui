@@ -53,7 +53,6 @@ export interface GatewayConfig {
     enabled: boolean;
     app_id: string;
     app_secret: string;
-    allow_from: string;
     encrypt_key: string;
     mode: string;
     webhook_bind: string;
@@ -62,7 +61,6 @@ export interface GatewayConfig {
   telegram: {
     enabled: boolean;
     bot_token: string;
-    allow_from: string;
     webhook_url: string;
     require_pairing: boolean;
   };
@@ -80,11 +78,18 @@ export interface PendingPairing {
   created_at: string;
 }
 
+export interface ApprovedChat {
+  platform: string;
+  chat_id: string;
+  approved_at: string;
+  enabled: boolean;
+}
+
 export interface PlatformInfo {
   name: string;
   enabled: boolean;
   mode?: string;
-  allow_from: string;
+  require_pairing?: boolean;
 }
 
 export type ThemeMode = 'auto' | 'dark' | 'light';

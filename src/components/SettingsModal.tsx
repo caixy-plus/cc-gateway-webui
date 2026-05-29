@@ -123,16 +123,16 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
 
           <div className="settings-section">
             <h4>{t('settings.general')}</h4>
-            <div className="form-row">
+            <div className="form-row full">
               <div className="form-group">
-                <label>{t('settings.port')}</label>
-                <input type="number" value={form.port} onChange={(e) => update('port', parseInt(e.target.value) || 17534)} />
+                <label>{t('settings.default_dir')}</label>
+                <input type="text" value={form.default_dir} onChange={(e) => update('default_dir', e.target.value)} />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>{t('settings.default_dir')}</label>
-                <input type="text" value={form.default_dir} onChange={(e) => update('default_dir', e.target.value)} />
+                <label>{t('settings.port')}</label>
+                <input type="number" value={form.port} onChange={(e) => update('port', parseInt(e.target.value) || 17534)} />
               </div>
               <div className="form-group">
                 <label>{t('settings.media_retention')}</label>
@@ -229,15 +229,23 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
           </div>
 
           <div className="settings-section">
-            <h4>{t('settings.feishu')}</h4>
-            <div className="form-group checkbox-row">
-              <input type="checkbox" id="feishu_enabled" checked={form.feishu.enabled} onChange={(e) => update('feishu.enabled', e.target.checked)} />
-              <label htmlFor="feishu_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+            <h4>
+              {t('settings.feishu')}
+              <span className={`section-badge${form.feishu.enabled ? ' on' : ''}`}>
+                {form.feishu.enabled ? t('settings.on') : t('settings.off')}
+              </span>
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-row">
+                <input type="checkbox" id="feishu_enabled" checked={form.feishu.enabled} onChange={(e) => update('feishu.enabled', e.target.checked)} />
+                <label htmlFor="feishu_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+              </div>
+              <div className="checkbox-row">
+                <input type="checkbox" id="feishu_require_pairing" checked={form.feishu.require_pairing} onChange={(e) => update('feishu.require_pairing', e.target.checked)} />
+                <label htmlFor="feishu_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
+              </div>
             </div>
-            <div className="form-group checkbox-row">
-              <input type="checkbox" id="feishu_require_pairing" checked={form.feishu.require_pairing} onChange={(e) => update('feishu.require_pairing', e.target.checked)} />
-              <label htmlFor="feishu_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
-            </div>
+            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
             <div className="form-row">
               <div className="form-group">
                 <label>{t('settings.app_id')}</label>
@@ -248,11 +256,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                 <input type="text" value={form.feishu.app_secret} onChange={(e) => update('feishu.app_secret', e.target.value)} />
               </div>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.allow_from')}</label>
-                <input type="text" value={form.feishu.allow_from} onChange={(e) => update('feishu.allow_from', e.target.value)} />
-              </div>
+            <div className="form-row full">
               <div className="form-group">
                 <label>{t('settings.encrypt_key')}</label>
                 <input type="text" value={form.feishu.encrypt_key} onChange={(e) => update('feishu.encrypt_key', e.target.value)} />
@@ -274,32 +278,43 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
           </div>
 
           <div className="settings-section">
-            <h4>{t('settings.telegram')}</h4>
-            <div className="form-group checkbox-row">
-              <input type="checkbox" id="tg_enabled" checked={form.telegram.enabled} onChange={(e) => update('telegram.enabled', e.target.checked)} />
-              <label htmlFor="tg_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+            <h4>
+              {t('settings.telegram')}
+              <span className={`section-badge${form.telegram.enabled ? ' on' : ''}`}>
+                {form.telegram.enabled ? t('settings.on') : t('settings.off')}
+              </span>
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-row">
+                <input type="checkbox" id="tg_enabled" checked={form.telegram.enabled} onChange={(e) => update('telegram.enabled', e.target.checked)} />
+                <label htmlFor="tg_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+              </div>
+              <div className="checkbox-row">
+                <input type="checkbox" id="tg_require_pairing" checked={form.telegram.require_pairing} onChange={(e) => update('telegram.require_pairing', e.target.checked)} />
+                <label htmlFor="tg_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
+              </div>
             </div>
-            <div className="form-group checkbox-row">
-              <input type="checkbox" id="tg_require_pairing" checked={form.telegram.require_pairing} onChange={(e) => update('telegram.require_pairing', e.target.checked)} />
-              <label htmlFor="tg_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
-            </div>
-            <div className="form-row">
+            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
+            <div className="form-row full">
               <div className="form-group">
                 <label>{t('settings.bot_token')}</label>
                 <input type="text" value={form.telegram.bot_token} onChange={(e) => update('telegram.bot_token', e.target.value)} />
               </div>
+            </div>
+            <div className="form-row full">
               <div className="form-group">
-                <label>{t('settings.allow_from')}</label>
-                <input type="text" value={form.telegram.allow_from} onChange={(e) => update('telegram.allow_from', e.target.value)} />
+                <label>{t('settings.webhook_url')}</label>
+                <input type="text" value={form.telegram.webhook_url} onChange={(e) => update('telegram.webhook_url', e.target.value)} />
               </div>
             </div>
-            <div className="form-group">
-              <label>{t('settings.webhook_url')}</label>
-              <input type="text" value={form.telegram.webhook_url} onChange={(e) => update('telegram.webhook_url', e.target.value)} />
-            </div>
           </div>
+        </div>
 
-          <button className="save-btn" onClick={handleSave}>
+        <div className="settings-footer">
+          {changedKeys.size > 0 && (
+            <span className="pending-indicator">{t('settings.unsaved')}</span>
+          )}
+          <button className="save-btn" onClick={handleSave} disabled={changedKeys.size === 0}>
             {t('settings.save')}
           </button>
         </div>
