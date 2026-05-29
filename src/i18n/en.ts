@@ -131,6 +131,21 @@ export const en = {
   'settings.webhook_url': 'Webhook URL',
   'settings.save': 'Save',
   'settings.load_failed': 'Failed to load settings. Please check if the gateway is running.',
+  'settings.require_pairing': 'Require Pairing',
+
+  // Pairing
+  'sidebar.pairing': 'Pairing Requests',
+  'pairing.title': 'Pending Pairing Requests',
+  'pairing.platform': 'Platform',
+  'pairing.code': 'Code',
+  'pairing.chat_id': 'Chat ID',
+  'pairing.actions': 'Actions',
+  'pairing.approve': 'Approve',
+  'pairing.reject': 'Reject',
+  'pairing.empty': '// no pending pairing requests',
+  'pairing.load_failed': 'Failed to load pairing requests',
+  'pairing.approve_failed': 'Failed to approve pairing',
+  'pairing.reject_failed': 'Failed to reject pairing',
 
   // PlatformsModal
   'platforms.title': 'Connected Platforms',

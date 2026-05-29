@@ -57,18 +57,27 @@ export interface GatewayConfig {
     encrypt_key: string;
     mode: string;
     webhook_bind: string;
+    require_pairing: boolean;
   };
   telegram: {
     enabled: boolean;
     bot_token: string;
     allow_from: string;
     webhook_url: string;
+    require_pairing: boolean;
   };
   default_dir: string;
   show_thinking: boolean;
   media_retention_days: number;
   port: number;
   session_retention_per_channel?: number;
+}
+
+export interface PendingPairing {
+  pairing_code: string;
+  platform: string;
+  chat_id: string;
+  created_at: string;
 }
 
 export interface PlatformInfo {

@@ -703,6 +703,29 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* ===== Pairing badge ===== */
+.pairing-btn {
+  position: relative;
+}
+
+.pairing-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 /* ===== MAIN CHAT AREA ===== */
 .main {
   flex: 1;

@@ -133,6 +133,21 @@ export const zh: Record<TranslationKey, string> = {
   'settings.webhook_url': 'Webhook URL',
   'settings.save': '保存',
   'settings.load_failed': '加载设置失败。请检查网关是否正在运行。',
+  'settings.require_pairing': '需要配对认证',
+
+  // Pairing
+  'sidebar.pairing': '配对请求',
+  'pairing.title': '待放行配对请求',
+  'pairing.platform': '平台',
+  'pairing.code': '配对码',
+  'pairing.chat_id': '聊天 ID',
+  'pairing.actions': '操作',
+  'pairing.approve': '放行',
+  'pairing.reject': '拒绝',
+  'pairing.empty': '// 暂无待放行配对请求',
+  'pairing.load_failed': '加载配对请求失败',
+  'pairing.approve_failed': '放行配对失败',
+  'pairing.reject_failed': '拒绝配对失败',
 
   // PlatformsModal
   'platforms.title': '已连接平台',

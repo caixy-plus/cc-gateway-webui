@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SessionList } from '@/components/SessionList';
 import { ChatArea } from '@/components/ChatArea';
 import { DirModal } from '@/components/DirModal';
+import { PairingModal } from '@/components/PairingModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { Toast } from '@/components/Toast';
 import { api, createEventSource, ApiError } from '@/api/client';
@@ -31,6 +32,8 @@ const App: React.FC = () => {
   const [starting, setStarting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showPairing, setShowPairing] = useState(false);
+  const [pairingCount, setPairingCount] = useState(0);
   const { theme, setTheme } = useTheme();
   const evtSourceRef = useRef<EventSource | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -111,6 +114,18 @@ const App: React.FC = () => {
     };
     fetchPlatforms();
     const iv = setInterval(fetchPlatforms, 10000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    const fetchPairings = async () => {
+      try {
+        const data = await api.listPairings();
+        setPairingCount((data.pending || []).length);
+      } catch {}
+    };
+    fetchPairings();
+    const iv = setInterval(fetchPairings, 5000);
     return () => clearInterval(iv);
   }, []);
 
@@ -420,6 +435,8 @@ const App: React.FC = () => {
         onRestart={handleRestart}
         onSourceFilterChange={setSourceFilter}
         restarting={restarting}
+        onOpenPairing={() => setShowPairing(true)}
+        pairingCount={pairingCount}
       />
       <ChatArea
         session={activeSession}
@@ -454,6 +471,11 @@ const App: React.FC = () => {
           config={config}
           onClose={() => setShowSettings(false)}
           onSave={saveConfig}
+        />
+      )}
+      {showPairing && (
+        <PairingModal
+          onClose={() => setShowPairing(false)}
         />
       )}
       {deleteTarget && (

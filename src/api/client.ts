@@ -164,6 +164,23 @@ export const api = {
   restart: () => fetchJSON<{ status?: string; command?: string; error?: string }>('/api/restart', {
     method: 'POST',
   }),
+
+  listPairings: () =>
+    fetchJSON<{ pending: Array<{ pairing_code: string; platform: string; chat_id: string; created_at: string }> }>(
+      '/api/pairing/pending'
+    ),
+
+  approvePairing: (pairingCode: string) =>
+    fetchJSON<{ status?: string; platform?: string; chat_id?: string; error?: string }>(
+      '/api/pairing/approve',
+      { method: 'POST', body: JSON.stringify({ pairing_code: pairingCode }) }
+    ),
+
+  rejectPairing: (pairingCode: string) =>
+    fetchJSON<{ status?: string; error?: string }>(
+      '/api/pairing/reject',
+      { method: 'POST', body: JSON.stringify({ pairing_code: pairingCode }) }
+    ),
 };
 
 export function createEventSource(sessionId: string): EventSource {

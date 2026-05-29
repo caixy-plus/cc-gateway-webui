@@ -55,10 +55,12 @@ interface Props {
   onDelete: (id: string, e: React.MouseEvent) => void;
   onCreate: () => void;
   onOpenSettings: () => void;
+  onOpenPairing: () => void;
   onThemeChange: (theme: ThemeMode) => void;
   onRestart: () => void;
   onSourceFilterChange: (filter: SourceFilter) => void;
   restarting?: boolean;
+  pairingCount?: number;
 }
 
 export const SessionList: React.FC<Props> = ({
@@ -72,10 +74,12 @@ export const SessionList: React.FC<Props> = ({
   onDelete,
   onCreate,
   onOpenSettings,
+  onOpenPairing,
   onThemeChange,
   onRestart,
   onSourceFilterChange,
   restarting,
+  pairingCount,
 }) => {
   const { t } = useI18n();
   const [checking, setChecking] = useState(false);
@@ -332,6 +336,17 @@ export const SessionList: React.FC<Props> = ({
         <div className="footer-actions">
           <button className="icon-btn" onClick={onOpenSettings} title={t('sidebar.settings')} data-testid="settings-btn">
             ⚙
+          </button>
+          <button
+            className="icon-btn pairing-btn"
+            onClick={onOpenPairing}
+            title={t('sidebar.pairing')}
+            data-testid="pairing-btn"
+          >
+            🔑
+            {pairingCount !== undefined && pairingCount > 0 && (
+              <span className="pairing-badge">{pairingCount}</span>
+            )}
           </button>
           <button className={`icon-btn ${restarting ? 'spinning' : ''}`} onClick={onRestart} disabled={restarting} title={t('sidebar.restart_gateway')}>
             ↻

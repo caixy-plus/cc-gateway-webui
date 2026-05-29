@@ -234,6 +234,10 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
               <input type="checkbox" id="feishu_enabled" checked={form.feishu.enabled} onChange={(e) => update('feishu.enabled', e.target.checked)} />
               <label htmlFor="feishu_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
             </div>
+            <div className="form-group checkbox-row">
+              <input type="checkbox" id="feishu_require_pairing" checked={form.feishu.require_pairing} onChange={(e) => update('feishu.require_pairing', e.target.checked)} />
+              <label htmlFor="feishu_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
+            </div>
             <div className="form-row">
               <div className="form-group">
                 <label>{t('settings.app_id')}</label>
@@ -274,6 +278,10 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
             <div className="form-group checkbox-row">
               <input type="checkbox" id="tg_enabled" checked={form.telegram.enabled} onChange={(e) => update('telegram.enabled', e.target.checked)} />
               <label htmlFor="tg_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+            </div>
+            <div className="form-group checkbox-row">
+              <input type="checkbox" id="tg_require_pairing" checked={form.telegram.require_pairing} onChange={(e) => update('telegram.require_pairing', e.target.checked)} />
+              <label htmlFor="tg_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
             </div>
             <div className="form-row">
               <div className="form-group">
