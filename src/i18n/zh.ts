@@ -49,6 +49,8 @@ export const zh: Record<TranslationKey, string> = {
   'chat.change_dir': '更改目录',
   'chat.active': '运行中',
   'chat.stopped': '已停止',
+  'chat.allow': '允许',
+  'chat.deny': '拒绝',
 
   // SessionList
   'sidebar.new_session': '新建会话',
@@ -121,6 +123,7 @@ export const zh: Record<TranslationKey, string> = {
   'settings.agent_default': '默认',
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
+  'settings.agent_pi': 'pi',
   'settings.cli_path': 'CLI 路径',
   'settings.default_args': '默认参数',
   'settings.feishu': '飞书',
@@ -175,6 +178,7 @@ export const zh: Record<TranslationKey, string> = {
   'platforms.empty': '// 无已启用平台',
   'platforms.mode': '模式: {mode}',
   'platforms.connected': '已连接',
+'platforms.disconnected': '未连接',
 
   // Backend error keys (cc-gateway src/i18n/dict.rs)
   'webui.empty_message': '空消息',

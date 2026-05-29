@@ -180,7 +180,17 @@ const App: React.FC = () => {
       try {
         const data = await api.getHistory(activeId);
         if (data.history?.length) {
-          setMessages(data.history.map((h) => ({ role: h.role as Message['role'], content: stripAnsi(h.content) })));
+          setMessages(data.history.map((h) => {
+            if (h.role === 'permission_request') {
+              const nl = h.content.indexOf('\n');
+              return {
+                role: 'permission_request' as const,
+                content: stripAnsi(nl > 0 ? h.content.slice(nl + 1) : h.content),
+                requestId: nl > 0 ? h.content.slice(0, nl) : '',
+              };
+            }
+            return { role: h.role as Message['role'], content: stripAnsi(h.content) };
+          }));
         } else {
           setMessages([]);
         }
@@ -197,9 +207,22 @@ const App: React.FC = () => {
       try {
         const data = JSON.parse(e.data);
         if (data.session_id === activeId) {
-          setMessages((prev) => [...prev, { role: data.role as Message['role'], content: stripAnsi(data.content) }]);
-          if (data.role !== 'user') {
+          if (data.role === 'permission_request') {
+            // Structured format: first line = request_id, rest = display text
+            const nl = data.content.indexOf('\n');
+            const requestId = nl > 0 ? data.content.slice(0, nl) : '';
+            const body = nl > 0 ? data.content.slice(nl + 1) : data.content;
+            setMessages((prev) => [...prev, {
+              role: 'permission_request' as const,
+              content: stripAnsi(body),
+              requestId,
+            }]);
             setSending(false);
+          } else {
+            setMessages((prev) => [...prev, { role: data.role as Message['role'], content: stripAnsi(data.content) }]);
+            if (data.role !== 'user') {
+              setSending(false);
+            }
           }
         }
       } catch {}

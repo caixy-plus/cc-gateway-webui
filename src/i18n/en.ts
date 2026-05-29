@@ -47,6 +47,8 @@ export const en = {
   'chat.change_dir': 'Change Dir',
   'chat.active': 'ACTIVE',
   'chat.stopped': 'STOPPED',
+  'chat.allow': 'Allow',
+  'chat.deny': 'Deny',
 
   // SessionList
   'sidebar.new_session': 'new session',
@@ -119,6 +121,7 @@ export const en = {
   'settings.agent_default': 'Default',
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
+  'settings.agent_pi': 'pi',
   'settings.cli_path': 'CLI Path',
   'settings.default_args': 'Default Args',
   'settings.feishu': 'Feishu',
@@ -173,6 +176,7 @@ export const en = {
   'platforms.empty': '// no platforms enabled',
   'platforms.mode': 'mode: {mode}',
   'platforms.connected': 'connected',
+'platforms.disconnected': 'disconnected',
 
   // Backend error keys (cc-gateway src/i18n/dict.rs)
   'webui.empty_message': 'Empty message',

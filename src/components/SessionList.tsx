@@ -327,8 +327,8 @@ export const SessionList: React.FC<Props> = ({
             <div key={p.name} className="platform-row">
               <span className="platform-row-name">{platformIcon(p.name)} {p.name}</span>
               <div className="platform-row-right">
-                <span className={`platform-status ${p.enabled ? 'connected' : 'off'}`}>
-                  {p.enabled ? t('sidebar.connected') : t('sidebar.off')}
+                <span className={`platform-status ${p.connected ? 'connected' : 'off'}`}>
+                  {p.connected ? t('sidebar.connected') : t('sidebar.off')}
                 </span>
                 {onToggleRequirePairing && (
                   <button

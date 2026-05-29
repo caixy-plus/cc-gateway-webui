@@ -204,6 +204,12 @@ export const api = {
       '/api/pairing/approved/remove',
       { method: 'POST', body: JSON.stringify({ platform, chat_id: chatId }) }
     ),
+
+  respondPermission: (sessionId: string, requestId: string, action: 'allow' | 'deny', reason?: string) =>
+    fetchJSON<{ status?: string; error?: string }>(
+      `/api/sessions/${sessionId}/permission`,
+      { method: 'POST', body: JSON.stringify({ request_id: requestId, action, reason }) }
+    ),
 };
 
 export function createEventSource(sessionId: string): EventSource {

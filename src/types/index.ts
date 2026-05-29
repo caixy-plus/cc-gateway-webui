@@ -12,8 +12,10 @@ export interface Session {
 }
 
 export interface Message {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'permission_request';
   content: string;
+  /** request_id for permission/confirm/select/question prompts */
+  requestId?: string;
 }
 
 export interface EventData {
@@ -35,7 +37,7 @@ export interface GatewayConfig {
     max_size_mb: number;
   };
   agent: {
-    default: 'claude' | 'cursor';
+    default: 'claude' | 'cursor' | 'pi';
     claude: {
       cli_path?: string;
       default_args?: string;
@@ -43,6 +45,12 @@ export interface GatewayConfig {
       permission?: string;
     };
     cursor: {
+      cli_path?: string;
+      default_args?: string;
+      mode?: string;
+      permission?: string;
+    };
+    pi: {
       cli_path?: string;
       default_args?: string;
       mode?: string;
@@ -88,6 +96,7 @@ export interface ApprovedChat {
 export interface PlatformInfo {
   name: string;
   enabled: boolean;
+  connected: boolean;
   mode?: string;
   require_pairing?: boolean;
 }

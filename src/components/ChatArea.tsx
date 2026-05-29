@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useI18n, type Locale } from '@/i18n';
 import type { Session, Message } from '@/types';
+import { api } from '@/api/client';
 
 interface Props {
   session: Session | undefined;
@@ -104,6 +105,12 @@ export const ChatArea: React.FC<Props> = ({
         {messages.map((m, i) => (
           <div key={i} className={`message ${m.role}`}>
             {m.content}
+            {m.role === 'permission_request' && m.requestId && (
+              <PermissionActions
+                sessionId={session?.id || ''}
+                requestId={m.requestId}
+              />
+            )}
           </div>
         ))}
         {sending && (
@@ -177,6 +184,51 @@ export const ChatArea: React.FC<Props> = ({
           </>
         )}
       </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Inline permission allow/deny buttons
+// ---------------------------------------------------------------------------
+
+const PermissionActions: React.FC<{ sessionId: string; requestId: string }> = ({
+  sessionId,
+  requestId,
+}) => {
+  const { t } = useI18n();
+  const [status, setStatus] = useState<'pending' | 'loading' | 'done'>('pending');
+
+  const respond = async (action: 'allow' | 'deny') => {
+    setStatus('loading');
+    try {
+      await api.respondPermission(sessionId, requestId, action);
+      setStatus('done');
+    } catch {
+      setStatus('pending');
+    }
+  };
+
+  if (status === 'done') {
+    return <div className="perm-done">✓</div>;
+  }
+
+  return (
+    <div className="perm-actions">
+      <button
+        className="perm-allow"
+        disabled={status === 'loading'}
+        onClick={() => respond('allow')}
+      >
+        {t('chat.allow')}
+      </button>
+      <button
+        className="perm-deny"
+        disabled={status === 'loading'}
+        onClick={() => respond('deny')}
+      >
+        {t('chat.deny')}
+      </button>
     </div>
   );
 };

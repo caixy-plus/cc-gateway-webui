@@ -25,7 +25,7 @@ export const PlatformsModal: React.FC<Props> = ({ platforms, onClose }) => {
                 <div className="platform-name">{p.name}</div>
                 {p.mode && <div className="platform-detail">{t('platforms.mode', { mode: p.mode })}</div>}
               </div>
-              <div className="platform-status">{t('platforms.connected')}</div>
+              <div className="platform-status">{p.connected ? t('platforms.connected') : t('platforms.disconnected')}</div>
             </div>
           ))}
         </div>

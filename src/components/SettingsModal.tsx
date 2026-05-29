@@ -185,6 +185,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                 <select value={form.agent.default} onChange={(e) => update('agent.default', e.target.value)}>
                   <option value="claude">{t('settings.agent_claude')}</option>
                   <option value="cursor">{t('settings.agent_cursor')}</option>
+                  <option value="pi">{t('settings.agent_pi')}</option>
                 </select>
               </div>
             </div>
@@ -223,6 +224,26 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                   type="text"
                   value={form.agent.cursor.default_args || ''}
                   onChange={(e) => update('agent.cursor.default_args', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('settings.agent_pi')} / {t('settings.cli_path')}</label>
+                <input
+                  type="text"
+                  value={form.agent.pi.cli_path || ''}
+                  onChange={(e) => update('agent.pi.cli_path', e.target.value)}
+                  placeholder="pi"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('settings.agent_pi')} / {t('settings.default_args')}</label>
+                <input
+                  type="text"
+                  value={form.agent.pi.default_args || ''}
+                  onChange={(e) => update('agent.pi.default_args', e.target.value)}
                 />
               </div>
             </div>
