@@ -18,6 +18,7 @@ interface Props {
   onStop: () => void;
   onOpenDir: () => void;
   onLocaleChange: (locale: Locale) => void;
+  onToggleSidebar: () => void;
 }
 
 export const ChatArea: React.FC<Props> = ({
@@ -35,6 +36,7 @@ export const ChatArea: React.FC<Props> = ({
   onStop,
   onOpenDir,
   onLocaleChange,
+  onToggleSidebar,
 }) => {
   const { t } = useI18n();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,6 +52,14 @@ export const ChatArea: React.FC<Props> = ({
   return (
     <div className="main">
       <div className="chat-header">
+        <button
+          className="hamburger-btn"
+          onClick={onToggleSidebar}
+          title={t('chat.menu')}
+          aria-label={t('chat.menu')}
+        >
+          ☰
+        </button>
         <div className={`status ${session?.active ? '' : 'inactive'}`} />
         <h2>{session?.title || t('chat.select_session')}</h2>
         <div className="session-info">

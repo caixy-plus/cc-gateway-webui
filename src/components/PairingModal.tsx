@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useI18n } from '@/i18n';
 import { api } from '@/api/client';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import type { PendingPairing, ApprovedChat } from '@/types';
 
 interface Props {
@@ -13,6 +14,7 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
   const [approved, setApproved] = useState<ApprovedChat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [removeTarget, setRemoveTarget] = useState<ApprovedChat | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -82,8 +84,14 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
     }
   };
 
-  const handleRemoveApproval = async (chat: ApprovedChat) => {
-    if (!window.confirm(t('pairing.confirm_remove'))) return;
+  const handleRemoveApproval = (chat: ApprovedChat) => {
+    setRemoveTarget(chat);
+  };
+
+  const confirmRemoveApproval = async () => {
+    if (!removeTarget) return;
+    const chat = removeTarget;
+    setRemoveTarget(null);
     setLoading(true);
     try {
       const data = await api.removeApproval(chat.platform, chat.chat_id);
@@ -102,7 +110,8 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
   const platformColor = (platform: string) => (platform === 'feishu' ? 'var(--accent)' : 'var(--cyan)');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <>
+      <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '560px', maxHeight: '82vh' }}>
         <div className="modal-header">
           <h3>{t('pairing.title')}</h3>
@@ -206,6 +215,19 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      open={!!removeTarget}
+      title={t('pairing.remove')}
+      message={t('pairing.confirm_remove')}
+      confirmLabel={t('delete.confirm')}
+      cancelLabel={t('delete.cancel')}
+      variant="danger"
+      loading={loading}
+      onConfirm={confirmRemoveApproval}
+      onCancel={() => setRemoveTarget(null)}
+    />
+    </>
   );
 };
 

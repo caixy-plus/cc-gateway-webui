@@ -106,6 +106,15 @@ html, body {
   gap: 8px;
 }
 
+/* Hidden on desktop; shown on mobile via media query */
+.hamburger-btn {
+  display: none;
+}
+
+.sidebar-close-btn {
+  display: none;
+}
+
 .bot-toggle {
   font-size: 14px;
 }
@@ -1742,7 +1751,6 @@ html, body {
   line-height: 1.5;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  margin-top: -2px;
 }
 
 /* Section header with an enabled-state badge */
@@ -2014,4 +2022,426 @@ html, body {
   color: #2ea043;
   font-size: 16px;
   margin-top: 8px;
+}
+
+/* ============================================ */
+/* ===== MOBILE RESPONSIVE (max-width: 768px) ===== */
+/* ============================================ */
+@media (max-width: 768px) {
+  /* --- Sidebar becomes slide-in overlay --- */
+  .hamburger-btn {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    transition: all 0.15s ease;
+  }
+
+  .hamburger-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-medium);
+  }
+
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 12, 12, 0.6);
+    z-index: 49;
+    animation: modal-enter 0.2s ease-out;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100%;
+    height: 100dvh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Close button inside sidebar on mobile */
+  .sidebar-close-btn {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-medium);
+  }
+
+  /* --- Main area full width --- */
+  .main {
+    width: 100%;
+  }
+
+  /* --- Chat header --- */
+  .chat-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .chat-header h2 {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-header .session-info {
+    display: none;
+  }
+
+  .chat-header .lang-pill {
+    margin-left: 0;
+  }
+
+  .chat-header .actions button {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
+  /* --- Toolbar --- */
+  .toolbar {
+    padding: 6px 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar .work-dir {
+    font-size: 10px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .toolbar button {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+
+  /* --- Messages --- */
+  .messages {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  .message {
+    max-width: 92%;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .message.system {
+    max-width: 90%;
+    font-size: 12px;
+  }
+
+  /* --- Input area --- */
+  .input-area {
+    padding: 10px 10px 12px;
+    gap: 8px;
+  }
+
+  .input-area input {
+    font-size: 14px;
+    padding: 10px 12px 10px 28px;
+  }
+
+  .input-area .input-wrapper::before {
+    left: 10px;
+    font-size: 12px;
+  }
+
+  .input-area button {
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+
+  /* --- Restart area in input --- */
+  .restart-area {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .restart-area .restart-hint {
+    font-size: 11px;
+  }
+
+  .restart-btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  /* --- Empty state --- */
+  .empty-state {
+    padding: 20px 12px;
+  }
+
+  .empty-state .restart-btn {
+    width: auto;
+  }
+
+  /* --- Modals full width --- */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-height: 90vh;
+    max-height: 90dvh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: none;
+  }
+
+  .modal-content.confirm-modal {
+    width: 92% !important;
+    align-self: center;
+    border-radius: var(--radius);
+    border-bottom: 1px solid var(--border-medium);
+    margin-bottom: 10px;
+  }
+
+  .modal-header {
+    padding: 12px 16px;
+  }
+
+  .modal-header h3 {
+    font-size: 13px;
+  }
+
+  /* Settings modal scrollable */
+  .settings-form {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .settings-section .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-footer {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Dir modal */
+  .dir-list {
+    max-height: 50vh;
+  }
+
+  .dir-item {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Pairing modal */
+  .pairing-body {
+    padding: 8px 10px 12px;
+  }
+
+  .pairing-table {
+    font-size: 10px;
+  }
+
+  .pairing-table thead {
+    display: none;
+  }
+
+  .pairing-table tbody tr {
+    padding: 8px 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .pairing-table tbody td {
+    padding: 2px 4px;
+    border: none;
+    text-align: left !important;
+  }
+
+  /* Update modal */
+  .update-hero {
+    grid-template-columns: 40px 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .update-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    font-size: 20px;
+  }
+
+  .update-status-title {
+    font-size: 13px;
+  }
+
+  .update-version-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .update-notes-body {
+    max-height: 140px;
+  }
+
+  /* --- Toast adjust position for mobile --- */
+  .toast {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    text-align: center;
+  }
+
+  /* --- Platform section in sidebar --- */
+  .platforms-section {
+    max-height: 100px;
+  }
+}
+
+/* ===== Token auth page ===== */
+.token-page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-void);
+}
+
+.token-card {
+  width: 380px;
+  max-width: 90vw;
+  padding: 32px 28px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.token-icon {
+  font-size: 32px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.token-card h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  margin-bottom: 8px;
+}
+
+.token-card > p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.token-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.token-card input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.token-card input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.token-card input.has-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(199, 92, 92, 0.15);
+}
+
+.token-card button {
+  background: var(--accent);
+  color: var(--bg-void);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 0;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  transition: all 0.15s ease;
+}
+
+.token-card button:hover {
+  background: #d4b06e;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.token-error {
+  color: var(--danger);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+.token-hint {
+  margin-top: 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }

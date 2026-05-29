@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/i18n';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import type { GatewayConfig } from '@/types';
 
 interface Props {
   config: GatewayConfig | null;
   onClose: () => void;
-  onSave: (config: Partial<GatewayConfig>) => void;
+  onSave: (config: Partial<GatewayConfig>) => Promise<void>;
+  onRestart: () => void;
 }
 
-const NEED_RESTART_KEYS = new Set(['port']);
+const NEED_RESTART_KEYS = new Set(['port', 'bind_address', 'allowed_ips']);
 
-export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
+export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRestart }) => {
   const { t } = useI18n();
   const [form, setForm] = useState<GatewayConfig | null>(null);
   const [changedKeys, setChangedKeys] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showRestartDialog, setShowRestartDialog] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -85,18 +89,29 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
     setChangedKeys((prev) => new Set(prev).add(path.split('.')[0]));
   };
 
-  const handleSave = () => {
-    if (!form) return;
-    // NOTE: This sends only the top-level keys that were changed. If multiple
-    // admins modify different sections concurrently, the last save wins for the
-    // entire top-level section (e.g., "feishu", "claude"). A backend-level
-    // optimistic concurrency (e.g., ETag / version field) would be needed for
-    // full protection against silent overwrites.
+  const handleSave = async () => {
+    if (!form || saving) return;
+    const needsRestart = Array.from(changedKeys).some((k) => NEED_RESTART_KEYS.has(k));
+
+    setSaving(true);
     const partial: Partial<GatewayConfig> = {};
     changedKeys.forEach((k) => {
       (partial as unknown as Record<string, unknown>)[k] = (form as unknown as Record<string, unknown>)[k];
     });
-    onSave(partial);
+
+    try {
+      await onSave(partial);
+      if (needsRestart) {
+        setShowRestartDialog(true);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRestartNow = () => {
+    setShowRestartDialog(false);
+    onRestart();
   };
 
   const needsRestart = Array.from(changedKeys).some((k) => NEED_RESTART_KEYS.has(k));
@@ -134,6 +149,31 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                 <label>{t('settings.port')}</label>
                 <input type="number" value={form.port} onChange={(e) => update('port', parseInt(e.target.value) || 17534)} />
               </div>
+              <div className="form-group">
+                <label>{t('settings.bind_address')}</label>
+                <input type="text" value={form.bind_address} onChange={(e) => update('bind_address', e.target.value)} />
+                <div className="field-hint">{t('settings.bind_address_hint')}</div>
+              </div>
+            </div>
+            <div className="form-row full">
+              <div className="form-group">
+                <label>{t('settings.allowed_ips')}</label>
+                <input
+                  type="text"
+                  value={(form.allowed_ips || []).join(', ')}
+                  onChange={(e) => {
+                    const ips = e.target.value
+                      .split(',')
+                      .map(s => s.trim())
+                      .filter(s => s.length > 0);
+                    update('allowed_ips', ips);
+                  }}
+                  placeholder="127.0.0.1, 192.168.1.0/24"
+                />
+                <div className="field-hint">{t('settings.allowed_ips_hint')}</div>
+              </div>
+            </div>
+            <div className="form-row full">
               <div className="form-group">
                 <label>{t('settings.media_retention')}</label>
                 <input type="number" value={form.media_retention_days} onChange={(e) => update('media_retention_days', parseInt(e.target.value) || 30)} />
@@ -277,25 +317,6 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                 <input type="text" value={form.feishu.app_secret} onChange={(e) => update('feishu.app_secret', e.target.value)} />
               </div>
             </div>
-            <div className="form-row full">
-              <div className="form-group">
-                <label>{t('settings.encrypt_key')}</label>
-                <input type="text" value={form.feishu.encrypt_key} onChange={(e) => update('feishu.encrypt_key', e.target.value)} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.mode')}</label>
-                <select value={form.feishu.mode} onChange={(e) => update('feishu.mode', e.target.value)}>
-                  <option value="websocket">websocket</option>
-                  <option value="webhook">webhook</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>{t('settings.webhook_bind')}</label>
-                <input type="text" value={form.feishu.webhook_bind} onChange={(e) => update('feishu.webhook_bind', e.target.value)} />
-              </div>
-            </div>
           </div>
 
           <div className="settings-section">
@@ -322,12 +343,6 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
                 <input type="text" value={form.telegram.bot_token} onChange={(e) => update('telegram.bot_token', e.target.value)} />
               </div>
             </div>
-            <div className="form-row full">
-              <div className="form-group">
-                <label>{t('settings.webhook_url')}</label>
-                <input type="text" value={form.telegram.webhook_url} onChange={(e) => update('telegram.webhook_url', e.target.value)} />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -335,11 +350,21 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave }) => {
           {changedKeys.size > 0 && (
             <span className="pending-indicator">{t('settings.unsaved')}</span>
           )}
-          <button className="save-btn" onClick={handleSave} disabled={changedKeys.size === 0}>
-            {t('settings.save')}
+          <button className="save-btn" onClick={handleSave} disabled={changedKeys.size === 0 || saving}>
+            {saving ? '...' : t('settings.save')}
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showRestartDialog}
+        title={t('app.restart_confirm')}
+        message={t('app.restart_confirm_message')}
+        confirmLabel={t('app.restart_now')}
+        cancelLabel={t('app.later')}
+        onConfirm={handleRestartNow}
+        onCancel={() => setShowRestartDialog(false)}
+      />
     </div>
   );
 };

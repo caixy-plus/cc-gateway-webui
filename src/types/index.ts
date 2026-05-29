@@ -61,21 +61,20 @@ export interface GatewayConfig {
     enabled: boolean;
     app_id: string;
     app_secret: string;
-    encrypt_key: string;
-    mode: string;
-    webhook_bind: string;
     require_pairing: boolean;
   };
   telegram: {
     enabled: boolean;
     bot_token: string;
-    webhook_url: string;
     require_pairing: boolean;
   };
   default_dir: string;
   show_thinking: boolean;
   media_retention_days: number;
   port: number;
+  bind_address: string;
+  allowed_ips: string[];
+  webui_token?: string;
   session_retention_per_channel?: number;
 }
 
@@ -96,8 +95,7 @@ export interface ApprovedChat {
 export interface PlatformInfo {
   name: string;
   enabled: boolean;
-  connected: boolean;
-  mode?: string;
+  state: string;
   require_pairing?: boolean;
 }
 

@@ -15,10 +15,14 @@ export const en = {
   'app.save_failed': 'Save failed',
   'app.failed_save_config': 'Failed to save config',
   'app.restart_confirm': 'Restart cc-gateway daemon?',
+  'app.restart_confirm_message': 'Some changed settings require a daemon restart to take effect. Restart now?',
+  'app.restart_now': 'Restart Now',
+  'app.later': 'Later',
   'app.restarting': 'Restarting daemon...',
   'app.restart_requested': 'Restart requested',
   'app.restart_failed': 'Failed to restart',
   'app.ok': 'OK',
+  'app.close': 'Close',
   'app.error_generic': 'System error',
 
   // Delete confirm
@@ -47,6 +51,7 @@ export const en = {
   'chat.change_dir': 'Change Dir',
   'chat.active': 'ACTIVE',
   'chat.stopped': 'STOPPED',
+  'chat.menu': 'Menu',
   'chat.allow': 'Allow',
   'chat.deny': 'Deny',
 
@@ -70,10 +75,10 @@ export const en = {
   'sidebar.auto': 'auto',
   'sidebar.dark': 'dark',
   'sidebar.light': 'light',
-  'sidebar.on': 'ON',
-  'sidebar.off': 'OFF',
   'sidebar.all_sources': 'All Sources',
+  'sidebar.connecting': 'connecting',
   'sidebar.connected': 'connected',
+  'sidebar.disconnected': 'disconnected',
 
   // Update modal
   'update.title': 'Check for Updates',
@@ -109,6 +114,12 @@ export const en = {
   'settings.restart_cmd': 'Run {cmd} in your terminal, or click the restart button in the sidebar.',
   'settings.general': 'General',
   'settings.port': 'Port',
+  'settings.bind_address': 'Bind Address',
+  'settings.bind_address_hint': '127.0.0.1 = localhost only. 0.0.0.0 = LAN accessible.',
+  'settings.allowed_ips': 'IP Allowlist',
+  'settings.allowed_ips_hint': 'CIDR entries (e.g. 192.168.1.0/24). Empty = allow all. Changes require restart.',
+  'settings.webui_token': 'WebUI Access Token',
+  'settings.webui_token_hint': 'When set, requests must include ?token=xxx or Authorization: Bearer xxx. Empty = no auth.',
   'settings.default_dir': 'Default Directory',
   'settings.media_retention': 'Media Retention (days)',
   'settings.show_thinking': 'Show Thinking',
@@ -128,13 +139,11 @@ export const en = {
   'settings.enabled': 'Enabled',
   'settings.app_id': 'App ID',
   'settings.app_secret': 'App Secret',
-  'settings.encrypt_key': 'Encrypt Key',
-  'settings.mode': 'Mode',
-  'settings.webhook_bind': 'Webhook Bind',
   'settings.telegram': 'Telegram',
   'settings.bot_token': 'Bot Token',
-  'settings.webhook_url': 'Webhook URL',
   'settings.save': 'Save',
+  'settings.generate': 'Generate',
+  'settings.clear': 'Clear',
   'settings.load_failed': 'Failed to load settings. Please check if the gateway is running.',
   'settings.require_pairing': 'Require Pairing',
   'settings.require_pairing_hint': 'On: new chats need approval here before they can interact. Off: only already-approved chats work; new chats are silently ignored.',
@@ -174,7 +183,7 @@ export const en = {
   // PlatformsModal
   'platforms.title': 'Connected Platforms',
   'platforms.empty': '// no platforms enabled',
-  'platforms.mode': 'mode: {mode}',
+  'platforms.connecting': 'connecting',
   'platforms.connected': 'connected',
 'platforms.disconnected': 'disconnected',
 
@@ -183,12 +192,20 @@ export const en = {
   'webui.runtime_not_found': 'WebUI runtime not found',
   'webui.no_active_session': 'No active session',
   'webui.session_not_found': 'Session not found',
-  'webui.cannot_delete_active': 'Cannot delete an active session',
+  'webui.cannot_delete_active': 'Cannot delete an active session. Stop it first.',
   'webui.home_dir_error': 'Could not determine home directory',
   'webui.failed_stop_session': 'Failed to stop session',
   'webui.failed_restart_session': 'Failed to restart session',
-  'webui.failed_list_dir': 'Failed to list directory',
-  'webui.failed_set_dir': 'Failed to set directory',
+  'webui.failed_list_dir': 'Failed to read directory',
+  'webui.failed_set_dir': 'Path access denied',
+
+  // Token auth page
+  'token.title': 'Access Token',
+  'token.description': 'Enter your WebUI access token to continue.',
+  'token.placeholder': 'Enter token...',
+  'token.submit': 'Submit',
+  'token.invalid': 'Invalid token. Please try again.',
+  'token.hint': 'Use cc-gateway webui-token to view the token.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

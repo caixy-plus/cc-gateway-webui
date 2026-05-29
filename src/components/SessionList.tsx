@@ -51,6 +51,7 @@ interface Props {
   theme: ThemeMode;
   version: string;
   sourceFilter: SourceFilter;
+  mobileMenuOpen: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
   onCreate: () => void;
@@ -60,6 +61,7 @@ interface Props {
   onRestart: () => void;
   onSourceFilterChange: (filter: SourceFilter) => void;
   onToggleRequirePairing?: (platform: string, value: boolean) => void;
+  onCloseMobileMenu?: () => void;
   restarting?: boolean;
   pairingCount?: number;
 }
@@ -71,6 +73,7 @@ export const SessionList: React.FC<Props> = ({
   theme,
   version,
   sourceFilter,
+  mobileMenuOpen,
   onSelect,
   onDelete,
   onCreate,
@@ -80,6 +83,7 @@ export const SessionList: React.FC<Props> = ({
   onRestart,
   onSourceFilterChange,
   onToggleRequirePairing,
+  onCloseMobileMenu,
   restarting,
   pairingCount,
 }) => {
@@ -152,13 +156,23 @@ export const SessionList: React.FC<Props> = ({
   };
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar${mobileMenuOpen ? ' mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="brand">
           <div className="brand-icon">C</div>
           <h1>cc-gateway</h1>
         </div>
         <div className="header-actions">
+          {onCloseMobileMenu && (
+            <button
+              className="sidebar-close-btn"
+              onClick={onCloseMobileMenu}
+              title={t('app.close')}
+              aria-label={t('app.close')}
+            >
+              ×
+            </button>
+          )}
           <div className="theme-pill" data-testid="theme-pill">
             <button className={theme === 'auto' ? 'active' : ''} onClick={() => onThemeChange('auto')} title="auto">
               ◐
@@ -327,8 +341,8 @@ export const SessionList: React.FC<Props> = ({
             <div key={p.name} className="platform-row">
               <span className="platform-row-name">{platformIcon(p.name)} {p.name}</span>
               <div className="platform-row-right">
-                <span className={`platform-status ${p.connected ? 'connected' : 'off'}`}>
-                  {p.connected ? t('sidebar.connected') : t('sidebar.off')}
+                <span className={`platform-status ${p.state}`}>
+                  {p.state === 'connected' ? t('sidebar.connected') : p.state === 'connecting' ? t('sidebar.connecting') : t('sidebar.disconnected')}
                 </span>
                 {onToggleRequirePairing && (
                   <button

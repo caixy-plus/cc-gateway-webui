@@ -4,7 +4,9 @@ import { ChatArea } from '@/components/ChatArea';
 import { DirModal } from '@/components/DirModal';
 import { PairingModal } from '@/components/PairingModal';
 import { SettingsModal } from '@/components/SettingsModal';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
+import { TokenPage } from '@/components/TokenPage';
 import { api, createEventSource, ApiError } from '@/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
@@ -30,10 +32,13 @@ const App: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('WebUI');
   const [restarting, setRestarting] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [restartConfirm, setRestartConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showPairing, setShowPairing] = useState(false);
   const [pairingCount, setPairingCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [needsToken, setNeedsToken] = useState(false);
   const { theme, setTheme } = useTheme();
   const evtSourceRef = useRef<EventSource | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -59,18 +64,15 @@ const App: React.FC = () => {
     (e: unknown, fallback: string) => {
       if (e instanceof ApiError && e.errorKey) {
         const translated = t(e.errorKey as any);
-        // If missing in front-end dict, t() returns the key itself; fall back to backend message.
         if (translated && translated !== e.errorKey) return translated;
-        // Do not show backend error text; log for debugging only.
-        // eslint-disable-next-line no-console
-        console.warn('[webui] Untranslated error_key from backend:', e.errorKey, e.message);
-        return t('app.error_generic');
+        // Fall back to backend message if frontend dict doesn't have this key.
+        if (e.message) return e.message;
+        return fallback || t('app.error_generic');
       }
       if (e instanceof Error) {
         // eslint-disable-next-line no-console
         console.warn('[webui] Error:', e.message);
       }
-      // Do not show backend error text; only show local i18n fallback.
       return fallback || t('app.error_generic');
     },
     [t]
@@ -82,9 +84,14 @@ const App: React.FC = () => {
     try {
       const data = await api.getConfig();
       setConfig(data.config);
+      setNeedsToken(false);
       return data.config;
-    } catch {
-      showToast(t('settings.load_failed'), true);
+    } catch (e: unknown) {
+      if (e instanceof ApiError && e.status === 401) {
+        setNeedsToken(true);
+      } else {
+        showToast(t('settings.load_failed'), true);
+      }
       return null;
     }
   }, [showToast, t]);
@@ -435,9 +442,13 @@ const App: React.FC = () => {
   // Server handles source filtering; sessions already filtered by sourceFilter
   const displaySessions = sessions;
 
-  const handleRestart = async () => {
+  const handleRestart = () => {
     if (restarting) return;
-    if (!confirm(t('app.restart_confirm'))) return;
+    setRestartConfirm(true);
+  };
+
+  const confirmRestart = async () => {
+    setRestartConfirm(false);
     setRestarting(true);
     try {
       const data = await api.restart();
@@ -449,8 +460,15 @@ const App: React.FC = () => {
     }
   };
 
+  if (needsToken) {
+    return <TokenPage onTokenSet={() => loadConfig()} />;
+  }
+
   return (
     <>
+      {mobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
       <SessionList
         sessions={displaySessions}
         activeId={activeId}
@@ -458,7 +476,11 @@ const App: React.FC = () => {
         theme={theme}
         version={version}
         sourceFilter={sourceFilter}
-        onSelect={setActiveId}
+        mobileMenuOpen={mobileMenuOpen}
+        onSelect={(id) => {
+          setActiveId(id);
+          setMobileMenuOpen(false);
+        }}
         onDelete={deleteSession}
         onCreate={createSession}
         onOpenSettings={() => {
@@ -472,6 +494,7 @@ const App: React.FC = () => {
         onOpenPairing={() => setShowPairing(true)}
         pairingCount={pairingCount}
         onToggleRequirePairing={toggleRequirePairing}
+        onCloseMobileMenu={() => setMobileMenuOpen(false)}
       />
       <ChatArea
         session={activeSession}
@@ -488,6 +511,7 @@ const App: React.FC = () => {
         onStop={stopSession}
         onOpenDir={openDirModal}
         onLocaleChange={setLocale}
+        onToggleSidebar={() => setMobileMenuOpen((prev) => !prev)}
       />
       {showDir && (
         <DirModal
@@ -506,6 +530,7 @@ const App: React.FC = () => {
           config={config}
           onClose={() => setShowSettings(false)}
           onSave={saveConfig}
+          onRestart={handleRestart}
         />
       )}
       {showPairing && (
@@ -539,6 +564,16 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={restartConfirm}
+        title={t('app.restart_confirm')}
+        message={t('app.restarting')}
+        confirmLabel={t('app.restart_now')}
+        cancelLabel={t('app.later')}
+        loading={restarting}
+        onConfirm={confirmRestart}
+        onCancel={() => setRestartConfirm(false)}
+      />
       {toast && <Toast message={toast.msg} isError={toast.error} onClose={dismissToast} />}
     </>
   );

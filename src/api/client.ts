@@ -2,6 +2,23 @@ import type { Session, GatewayConfig, PlatformInfo } from '@/types';
 
 const API_BASE = '';
 
+function getToken(): string | null {
+  return sessionStorage.getItem('cc_gateway_token');
+}
+
+export function setToken(token: string) {
+  sessionStorage.setItem('cc_gateway_token', token);
+  try { localStorage.setItem('cc_gateway_token', token); } catch {}
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const token = getToken();
+  if (token) {
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  }
+  return { 'Content-Type': 'application/json' };
+}
+
 export interface UpdateCheckResponse {
   status?: 'available' | 'up_to_date' | string;
   update_available?: boolean;
@@ -19,10 +36,12 @@ export interface UpdateCheckResponse {
 
 export class ApiError extends Error {
   errorKey?: string;
+  status: number;
 
-  constructor(message: string, errorKey?: string) {
+  constructor(message: string, status: number, errorKey?: string) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
     this.errorKey = errorKey;
   }
 }
@@ -54,7 +73,7 @@ function extractError(bodyJson: unknown): { message: string; errorKey?: string }
 
 async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     ...options,
     signal,
   });
@@ -66,7 +85,7 @@ async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSi
   if (!res.ok) {
     const extracted = extractError(bodyJson);
     const errMsg = extracted.message || `HTTP ${res.status}`;
-    throw new ApiError(errMsg, extracted.errorKey);
+    throw new ApiError(errMsg, res.status, extracted.errorKey);
   }
 
   if (bodyJson !== null) {
@@ -213,5 +232,9 @@ export const api = {
 };
 
 export function createEventSource(sessionId: string): EventSource {
-  return new EventSource(`${API_BASE}/api/sessions/${sessionId}/events`);
+  const token = getToken();
+  const url = token
+    ? `${API_BASE}/api/sessions/${sessionId}/events?token=${encodeURIComponent(token)}`
+    : `${API_BASE}/api/sessions/${sessionId}/events`;
+  return new EventSource(url);
 }
