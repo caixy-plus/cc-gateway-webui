@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n, type TranslationKey } from '@/i18n';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import type { GatewayConfig, SaveConfigResult } from '@/types';
+import { api } from '@/api/client';
+import type { AgentCatalogEntry, GatewayConfig, SaveConfigResult } from '@/types';
 
 // ---- helper: single provider config row ----
 
@@ -49,9 +50,27 @@ interface Props {
   restarting?: boolean;
 }
 
+function mergeAgentProfilesFromCatalog(
+  agent: GatewayConfig['agent'],
+  providers: AgentCatalogEntry[],
+  defaultId: string,
+): GatewayConfig['agent'] {
+  const next: GatewayConfig['agent'] = { ...agent, default: agent.default || defaultId };
+  for (const p of providers) {
+    const existing = next[p.id];
+    if (existing && typeof existing === 'object') {
+      next[p.id] = { ...p.config, ...existing };
+    } else {
+      next[p.id] = { ...p.config };
+    }
+  }
+  return next;
+}
+
 export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRestartNow, restarting }) => {
   const { t } = useI18n();
   const [form, setForm] = useState<GatewayConfig | null>(null);
+  const [agentCatalog, setAgentCatalog] = useState<AgentCatalogEntry[]>([]);
   const [changedKeys, setChangedKeys] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,6 +82,22 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
       setForm(JSON.parse(JSON.stringify(config)));
       setChangedKeys(new Set());
       setLoadError(false);
+      void api
+        .getAgents()
+        .then((data) => {
+          setAgentCatalog(data.providers);
+          setForm((prev) => {
+            if (!prev) return prev;
+            const merged = JSON.parse(JSON.stringify(prev)) as GatewayConfig;
+            merged.agent = mergeAgentProfilesFromCatalog(
+              merged.agent,
+              data.providers,
+              data.default,
+            );
+            return merged;
+          });
+        })
+        .catch(() => setAgentCatalog([]));
     }
   }, [config]);
 
@@ -251,47 +286,29 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
             <div className="form-row">
               <div className="form-group">
                 <label>{t('settings.agent_default')}</label>
-                <select value={form.agent.default} onChange={(e) => update('agent.default', e.target.value)}>
-                  <option value="claude">{t('settings.agent_claude')}</option>
-                  <option value="cursor">{t('settings.agent_cursor')}</option>
-                  <option value="pi">{t('settings.agent_pi')}</option>
-                  <option value="codewhale">{t('settings.agent_codewhale')}</option>
+                <select
+                  value={form.agent.default}
+                  onChange={(e) => update('agent.default', e.target.value)}
+                >
+                  {agentCatalog.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.display_name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            {/* Claude */}
-            <ProviderConfigRow
-              label={t('settings.agent_claude')}
-              provider="claude"
-              form={form}
-              update={update}
-              t={t}
-            />
-            {/* Cursor */}
-            <ProviderConfigRow
-              label={t('settings.agent_cursor')}
-              provider="cursor"
-              form={form}
-              update={update}
-              t={t}
-            />
-            {/* Pi */}
-            <ProviderConfigRow
-              label={t('settings.agent_pi')}
-              provider="pi"
-              form={form}
-              update={update}
-              t={t}
-            />
-            {/* CodeWhale */}
-            <ProviderConfigRow
-              label={t('settings.agent_codewhale')}
-              provider="codewhale"
-              form={form}
-              update={update}
-              t={t}
-            />
+            {agentCatalog.map((p) => (
+              <ProviderConfigRow
+                key={p.id}
+                label={p.display_name}
+                provider={p.id}
+                form={form}
+                update={update}
+                t={t}
+              />
+            ))}
           </div>
 
           <div className="settings-section">
@@ -346,6 +363,40 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
               <div className="form-group">
                 <label>{t('settings.bot_token')}</label>
                 <input type="text" value={form.telegram.bot_token} onChange={(e) => update('telegram.bot_token', e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h4>
+              {t('settings.qq')}
+              <span className={`section-badge${form.qq?.enabled ? ' on' : ''}`}>
+                {form.qq?.enabled ? t('settings.on') : t('settings.off')}
+              </span>
+            </h4>
+            <div className="checkbox-group">
+              <div className="checkbox-row">
+                <input type="checkbox" id="qq_enabled" checked={form.qq?.enabled ?? false} onChange={(e) => update('qq.enabled', e.target.checked)} />
+                <label htmlFor="qq_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
+              </div>
+              <div className="checkbox-row">
+                <input type="checkbox" id="qq_sandbox" checked={form.qq?.sandbox ?? false} onChange={(e) => update('qq.sandbox', e.target.checked)} />
+                <label htmlFor="qq_sandbox" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.qq_sandbox')}</label>
+              </div>
+              <div className="checkbox-row">
+                <input type="checkbox" id="qq_require_pairing" checked={form.qq?.require_pairing ?? true} onChange={(e) => update('qq.require_pairing', e.target.checked)} />
+                <label htmlFor="qq_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
+              </div>
+            </div>
+            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('settings.app_id')}</label>
+                <input type="text" value={form.qq?.app_id ?? ''} onChange={(e) => update('qq.app_id', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>{t('settings.app_secret')}</label>
+                <input type="text" value={form.qq?.app_secret ?? ''} onChange={(e) => update('qq.app_secret', e.target.value)} />
               </div>
             </div>
           </div>

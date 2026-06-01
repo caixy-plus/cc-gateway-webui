@@ -29,6 +29,7 @@ function platformIcon(platform: string): string {
     case 'webui': return '💻';
     case 'feishu': return '📱';
     case 'telegram': return '✈️';
+    case 'qq': return '🐧';
     default: return '🔌';
   }
 }

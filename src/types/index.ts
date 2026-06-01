@@ -29,6 +29,32 @@ export interface DirItem {
   is_dir: boolean;
 }
 
+export interface AgentProviderConfig {
+  enabled?: boolean;
+  default_args?: string;
+  mode?: string;
+  permission?: string;
+}
+
+/** Entry from `GET /api/agents` (server-integrated provider catalog). */
+export interface AgentCatalogEntry {
+  id: string;
+  display_name: string;
+  cli_binary: string;
+  aliases: string[];
+  config: AgentProviderConfig;
+}
+
+export interface AgentsApiResponse {
+  default: string;
+  providers: AgentCatalogEntry[];
+}
+
+/** `config.json` `agent` — `default` plus dynamic provider profile keys. */
+export type AgentSection = {
+  default: string;
+} & Record<string, string | AgentProviderConfig | undefined>;
+
 export interface GatewayConfig {
   log: {
     level: string;
@@ -36,33 +62,7 @@ export interface GatewayConfig {
     max_lines: number;
     max_size_mb: number;
   };
-  agent: {
-    default: 'claude' | 'cursor' | 'pi' | 'codewhale';
-    claude: {
-      enabled?: boolean;
-      default_args?: string;
-      mode?: string;
-      permission?: string;
-    };
-    cursor: {
-      enabled?: boolean;
-      default_args?: string;
-      mode?: string;
-      permission?: string;
-    };
-    pi: {
-      enabled?: boolean;
-      default_args?: string;
-      mode?: string;
-      permission?: string;
-    };
-    codewhale: {
-      enabled?: boolean;
-      default_args?: string;
-      mode?: string;
-      permission?: string;
-    };
-  };
+  agent: AgentSection;
   feishu: {
     enabled: boolean;
     app_id: string;
@@ -72,6 +72,13 @@ export interface GatewayConfig {
   telegram: {
     enabled: boolean;
     bot_token: string;
+    require_pairing: boolean;
+  };
+  qq: {
+    enabled: boolean;
+    app_id: string;
+    app_secret: string;
+    sandbox: boolean;
     require_pairing: boolean;
   };
   default_dir: string;

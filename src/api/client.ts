@@ -166,8 +166,11 @@ export const api = {
     fetchJSON<{
       config: GatewayConfig;
       effective: Partial<GatewayConfig>;
+      agents?: import('@/types').AgentsApiResponse;
       restart_policy?: import('@/types').ConfigRestartPolicy;
     }>('/api/config'),
+
+  getAgents: () => fetchJSON<import('@/types').AgentsApiResponse>('/api/agents'),
 
   saveConfig: (config: Partial<GatewayConfig>) =>
     fetchJSON<import('@/types').SaveConfigResult>('/api/config', {
