@@ -23,7 +23,11 @@ export const DirModal: React.FC<Props> = ({
   onToggleHidden,
 }) => {
   const { t } = useI18n();
-  const isRoot = currentDir === '~' || currentDir === '/';
+  // Also hide .. when at a Windows drive root (e.g. C:\)
+  const isRoot =
+    currentDir === '~' ||
+    currentDir === '/' ||
+    /^[a-zA-Z]:\\$/.test(currentDir);
 
   return (
     <div className="modal-overlay" onClick={onClose} data-testid="dir-modal">

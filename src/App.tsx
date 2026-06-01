@@ -11,6 +11,7 @@ import { api, createEventSource, ApiError } from '@/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
+import { joinDir } from '@/utils/path';
 import type { Session, Message, PlatformInfo, GatewayConfig, SourceFilter } from '@/types';
 
 const App: React.FC = () => {
@@ -371,38 +372,32 @@ const App: React.FC = () => {
   };
 
   const enterDir = async (name: string) => {
-    const newPath = currentDir === '~' ? '~/' + name : currentDir + '/' + name;
+    const target = joinDir(currentDir, name);
     try {
-      const dirData = await api.listDir(newPath, activeId, showHidden);
+      const dirData = await api.listDir(target, activeId, showHidden);
       setDirItems(dirData.items || []);
-      setCurrentDir(dirData.dir || newPath);
+      setCurrentDir(dirData.dir || target);
     } catch (e: unknown) {
       showToast(errMsg(e, t('app.failed_list_dir')), true);
     }
   };
 
   const goUpDir = async () => {
-    const parts = currentDir.split('/').filter(Boolean);
-    if (parts.length <= 1) {
-      setCurrentDir('~');
-      try {
-        const dirData = await api.listDir('~', activeId, showHidden);
-        setDirItems(dirData.items || []);
-      } catch (e: unknown) {
-        showToast(errMsg(e, t('app.failed_list_dir')), true);
-      }
-      return;
-    }
-    parts.pop();
-    const parent = parts.join('/') || '/';
-    // Bug 3 fix: don't prepend / if path starts with ~
-    const newPath = parent.startsWith('~') ? parent : `/${parent}`;
+    const parent = joinDir(currentDir, '..');
     try {
-      const dirData = await api.listDir(newPath, activeId, showHidden);
+      const dirData = await api.listDir(parent, activeId, showHidden);
       setDirItems(dirData.items || []);
-      setCurrentDir(dirData.dir || newPath);
-    } catch (e: unknown) {
-      showToast(errMsg(e, t('app.failed_list_dir')), true);
+      setCurrentDir(dirData.dir || parent);
+    } catch (_e: unknown) {
+      // ensure_under_home rejects paths above home — refresh at
+      // current dir so the UI doesn't appear stuck.
+      try {
+        const dirData = await api.listDir(currentDir, activeId, showHidden);
+        setDirItems(dirData.items || []);
+        setCurrentDir(dirData.dir || currentDir);
+      } catch (_e2: unknown) {
+        // ignore
+      }
     }
   };
 
