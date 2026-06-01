@@ -140,7 +140,6 @@ export const zh: Record<TranslationKey, string> = {
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
   'settings.agent_pi': 'pi',
-  'settings.agent_codewhale': 'codewhale',
   'settings.agent_opencode': 'opencode',
   'settings.default_args': '默认参数',
   'settings.feishu': '飞书',

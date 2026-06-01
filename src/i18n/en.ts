@@ -138,7 +138,6 @@ export const en = {
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
   'settings.agent_pi': 'pi',
-  'settings.agent_codewhale': 'codewhale',
   'settings.agent_opencode': 'opencode',
   'settings.default_args': 'Default Args',
   'settings.feishu': 'Feishu',
