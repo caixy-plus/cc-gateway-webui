@@ -18,6 +18,8 @@ export const zh: Record<TranslationKey, string> = {
   'app.failed_save_config': '保存配置失败',
   'app.restart_confirm': '重启 cc-gateway 守护进程？',
   'app.restart_confirm_message': '部分配置需要重启守护进程才能生效。是否立即重启？',
+  'app.restart_sidebar_message':
+    '重启 cc-gateway 守护进程？飞书/Telegram 等平台连接、HTTP 端口及内存中的配置将从已保存的 config.json 重新加载。',
   'app.restart_now': '立即重启',
   'app.later': '稍后再说',
   'app.restarting': '正在重启守护进程...',
@@ -114,6 +116,9 @@ export const zh: Record<TranslationKey, string> = {
   'settings.restart_required': '需要重启',
   'settings.restart_notice': '端口的更改需要重启守护进程才能生效。',
   'settings.restart_cmd': '在终端运行 {cmd}，或点击侧边栏的重启按钮。',
+  'settings.restart_after_save_title': '需要重启守护进程',
+  'settings.restart_after_save_message':
+    '配置已保存。以下项需重启守护进程后生效：{fields}。可立即重启，或稍后点击侧边栏重启按钮。',
   'settings.general': '通用',
   'settings.port': '端口',
   'settings.bind_address': '绑定地址',
@@ -135,7 +140,7 @@ export const zh: Record<TranslationKey, string> = {
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
   'settings.agent_pi': 'pi',
-  'settings.cli_path': 'CLI 路径',
+  'settings.agent_codewhale': 'codewhale',
   'settings.default_args': '默认参数',
   'settings.feishu': '飞书',
   'settings.enabled': '启用',

@@ -37,21 +37,27 @@ export interface GatewayConfig {
     max_size_mb: number;
   };
   agent: {
-    default: 'claude' | 'cursor' | 'pi';
+    default: 'claude' | 'cursor' | 'pi' | 'codewhale';
     claude: {
-      cli_path?: string;
+      enabled?: boolean;
       default_args?: string;
       mode?: string;
       permission?: string;
     };
     cursor: {
-      cli_path?: string;
+      enabled?: boolean;
       default_args?: string;
       mode?: string;
       permission?: string;
     };
     pi: {
-      cli_path?: string;
+      enabled?: boolean;
+      default_args?: string;
+      mode?: string;
+      permission?: string;
+    };
+    codewhale: {
+      enabled?: boolean;
       default_args?: string;
       mode?: string;
       permission?: string;
@@ -102,3 +108,17 @@ export interface PlatformInfo {
 export type ThemeMode = 'auto' | 'dark' | 'light';
 
 export type SourceFilter = 'all' | 'WebUI' | 'Feishu' | 'Telegram' | 'TUI';
+
+/** Which config fields need a daemon restart vs apply live (from GET /api/config). */
+export interface ConfigRestartPolicy {
+  daemon_restart: string[];
+  live: string[];
+}
+
+export interface SaveConfigResult {
+  status?: string;
+  error?: string;
+  requires_restart?: boolean;
+  restart_fields?: string[];
+  live_fields?: string[];
+}

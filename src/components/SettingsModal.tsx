@@ -1,16 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { useI18n } from '@/i18n';
+import { useI18n, type TranslationKey } from '@/i18n';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import type { GatewayConfig } from '@/types';
+import type { GatewayConfig, SaveConfigResult } from '@/types';
+
+// ---- helper: single provider config row ----
+
+interface ProviderConfigRowProps {
+  label: string;
+  provider: string;
+  form: GatewayConfig;
+  update: (path: string, value: unknown) => void;
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
+}
+
+const ProviderConfigRow: React.FC<ProviderConfigRowProps> = ({ label, provider, form, update, t }) => {
+  const cfg = (form.agent as unknown as Record<string, Record<string, unknown>>)[provider];
+  return (
+    <div className="agent-provider-row">
+      <div className="agent-provider-header">
+        <input
+          type="checkbox"
+          id={`agent_${provider}_enabled`}
+          checked={(cfg?.enabled as boolean) ?? true}
+          onChange={(e) => update(`agent.${provider}.enabled`, e.target.checked)}
+        />
+        <label htmlFor={`agent_${provider}_enabled`}>{label}</label>
+      </div>
+      <div className="agent-provider-args">
+        <label>{t('settings.default_args')}</label>
+        <input
+          type="text"
+          value={(cfg?.default_args as string) || ''}
+          onChange={(e) => update(`agent.${provider}.default_args`, e.target.value)}
+        />
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------
 
 interface Props {
   config: GatewayConfig | null;
   onClose: () => void;
-  onSave: (config: Partial<GatewayConfig>) => Promise<void>;
+  onSave: (config: Partial<GatewayConfig>) => Promise<SaveConfigResult>;
   onRestart: () => void;
 }
-
-const NEED_RESTART_KEYS = new Set(['port', 'bind_address', 'allowed_ips']);
 
 export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRestart }) => {
   const { t } = useI18n();
@@ -19,6 +54,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [restartDialogFields, setRestartDialogFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (config) {
@@ -91,7 +127,6 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
 
   const handleSave = async () => {
     if (!form || saving) return;
-    const needsRestart = Array.from(changedKeys).some((k) => NEED_RESTART_KEYS.has(k));
 
     setSaving(true);
     const partial: Partial<GatewayConfig> = {};
@@ -100,10 +135,14 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
     });
 
     try {
-      await onSave(partial);
-      if (needsRestart) {
+      const result = await onSave(partial);
+      if (result.requires_restart) {
+        setRestartDialogFields(result.restart_fields ?? []);
         setShowRestartDialog(true);
       }
+      setChangedKeys(new Set());
+    } catch {
+      // Parent shows error toast
     } finally {
       setSaving(false);
     }
@@ -114,7 +153,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
     onRestart();
   };
 
-  const needsRestart = Array.from(changedKeys).some((k) => NEED_RESTART_KEYS.has(k));
+  const restartFieldsLabel = restartDialogFields.join(', ');
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -124,18 +163,6 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
           <button onClick={onClose}>×</button>
         </div>
         <div className="settings-form">
-          {needsRestart && (
-            <div className="restart-notice">
-              <div style={{ color: 'var(--accent)', fontWeight: 600, marginBottom: '4px' }}>
-                {t('settings.restart_required')}
-              </div>
-              {t('settings.restart_notice')}
-              <div style={{ marginTop: '6px' }}>
-                {t('settings.restart_cmd', { cmd: 'cc-gateway restart' })}
-              </div>
-            </div>
-          )}
-
           <div className="settings-section">
             <h4>{t('settings.general')}</h4>
             <div className="form-row full">
@@ -226,67 +253,43 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
                   <option value="claude">{t('settings.agent_claude')}</option>
                   <option value="cursor">{t('settings.agent_cursor')}</option>
                   <option value="pi">{t('settings.agent_pi')}</option>
+                  <option value="codewhale">{t('settings.agent_codewhale')}</option>
                 </select>
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.agent_claude')} / {t('settings.cli_path')}</label>
-                <input
-                  type="text"
-                  value={form.agent.claude.cli_path || ''}
-                  onChange={(e) => update('agent.claude.cli_path', e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.agent_claude')} / {t('settings.default_args')}</label>
-                <input
-                  type="text"
-                  value={form.agent.claude.default_args || ''}
-                  onChange={(e) => update('agent.claude.default_args', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.agent_cursor')} / {t('settings.cli_path')}</label>
-                <input
-                  type="text"
-                  value={form.agent.cursor.cli_path || ''}
-                  onChange={(e) => update('agent.cursor.cli_path', e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.agent_cursor')} / {t('settings.default_args')}</label>
-                <input
-                  type="text"
-                  value={form.agent.cursor.default_args || ''}
-                  onChange={(e) => update('agent.cursor.default_args', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.agent_pi')} / {t('settings.cli_path')}</label>
-                <input
-                  type="text"
-                  value={form.agent.pi.cli_path || ''}
-                  onChange={(e) => update('agent.pi.cli_path', e.target.value)}
-                  placeholder="pi"
-                />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.agent_pi')} / {t('settings.default_args')}</label>
-                <input
-                  type="text"
-                  value={form.agent.pi.default_args || ''}
-                  onChange={(e) => update('agent.pi.default_args', e.target.value)}
-                />
-              </div>
-            </div>
+            {/* Claude */}
+            <ProviderConfigRow
+              label={t('settings.agent_claude')}
+              provider="claude"
+              form={form}
+              update={update}
+              t={t}
+            />
+            {/* Cursor */}
+            <ProviderConfigRow
+              label={t('settings.agent_cursor')}
+              provider="cursor"
+              form={form}
+              update={update}
+              t={t}
+            />
+            {/* Pi */}
+            <ProviderConfigRow
+              label={t('settings.agent_pi')}
+              provider="pi"
+              form={form}
+              update={update}
+              t={t}
+            />
+            {/* CodeWhale */}
+            <ProviderConfigRow
+              label={t('settings.agent_codewhale')}
+              provider="codewhale"
+              form={form}
+              update={update}
+              t={t}
+            />
           </div>
 
           <div className="settings-section">
@@ -358,8 +361,8 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
 
       <ConfirmDialog
         open={showRestartDialog}
-        title={t('app.restart_confirm')}
-        message={t('app.restart_confirm_message')}
+        title={t('settings.restart_after_save_title')}
+        message={t('settings.restart_after_save_message', { fields: restartFieldsLabel })}
         confirmLabel={t('app.restart_now')}
         cancelLabel={t('app.later')}
         onConfirm={handleRestartNow}

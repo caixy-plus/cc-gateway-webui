@@ -427,11 +427,12 @@ const App: React.FC = () => {
       if (data.status === 'saved') {
         showToast(t('app.config_saved'));
         setConfig((prev) => (prev ? { ...prev, ...partial } : null));
-      } else {
-        showToast(data.error || t('app.save_failed'), true);
+        return data;
       }
+      throw new Error(data.error || t('app.save_failed'));
     } catch (e: unknown) {
       showToast(errMsg(e, t('app.failed_save_config')), true);
+      throw e;
     }
   };
 
@@ -567,7 +568,7 @@ const App: React.FC = () => {
       <ConfirmDialog
         open={restartConfirm}
         title={t('app.restart_confirm')}
-        message={t('app.restarting')}
+        message={t('app.restart_sidebar_message')}
         confirmLabel={t('app.restart_now')}
         cancelLabel={t('app.later')}
         loading={restarting}

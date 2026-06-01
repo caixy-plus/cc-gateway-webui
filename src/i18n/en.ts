@@ -16,6 +16,8 @@ export const en = {
   'app.failed_save_config': 'Failed to save config',
   'app.restart_confirm': 'Restart cc-gateway daemon?',
   'app.restart_confirm_message': 'Some changed settings require a daemon restart to take effect. Restart now?',
+  'app.restart_sidebar_message':
+    'Restart the cc-gateway daemon? Running platforms, HTTP listener, and in-memory settings will reload from the saved config file.',
   'app.restart_now': 'Restart Now',
   'app.later': 'Later',
   'app.restarting': 'Restarting daemon...',
@@ -112,6 +114,9 @@ export const en = {
   'settings.restart_required': 'Restart Required',
   'settings.restart_notice': 'Changes to port require a daemon restart to take effect.',
   'settings.restart_cmd': 'Run {cmd} in your terminal, or click the restart button in the sidebar.',
+  'settings.restart_after_save_title': 'Restart required',
+  'settings.restart_after_save_message':
+    'Saved. These fields need a daemon restart to take effect: {fields}. Restart now or use the sidebar restart button later.',
   'settings.general': 'General',
   'settings.port': 'Port',
   'settings.bind_address': 'Bind Address',
@@ -133,7 +138,7 @@ export const en = {
   'settings.agent_claude': 'claude',
   'settings.agent_cursor': 'cursor',
   'settings.agent_pi': 'pi',
-  'settings.cli_path': 'CLI Path',
+  'settings.agent_codewhale': 'codewhale',
   'settings.default_args': 'Default Args',
   'settings.feishu': 'Feishu',
   'settings.enabled': 'Enabled',

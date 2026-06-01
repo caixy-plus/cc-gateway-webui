@@ -2,6 +2,7 @@ import { useState, useCallback, createContext, useContext } from 'react';
 import { en, type TranslationKey } from './en';
 import { zh } from './zh';
 
+export type { TranslationKey };
 export type Locale = 'en' | 'zh';
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, zh };

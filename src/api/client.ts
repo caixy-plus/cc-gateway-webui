@@ -162,10 +162,15 @@ export const api = {
       body: JSON.stringify({ session_id: sessionId }),
     }),
 
-  getConfig: () => fetchJSON<{ config: GatewayConfig; effective: Partial<GatewayConfig> }>('/api/config'),
+  getConfig: () =>
+    fetchJSON<{
+      config: GatewayConfig;
+      effective: Partial<GatewayConfig>;
+      restart_policy?: import('@/types').ConfigRestartPolicy;
+    }>('/api/config'),
 
   saveConfig: (config: Partial<GatewayConfig>) =>
-    fetchJSON<{ status?: string; error?: string }>('/api/config', {
+    fetchJSON<import('@/types').SaveConfigResult>('/api/config', {
       method: 'POST',
       body: JSON.stringify(config),
     }),

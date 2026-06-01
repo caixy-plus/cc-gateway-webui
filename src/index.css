@@ -1880,6 +1880,63 @@ html, body {
   gap: 12px;
 }
 
+/* Agent provider compact row */
+.agent-provider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.agent-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.agent-provider-header label {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.agent-provider-args {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-provider-args label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.agent-provider-args input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.agent-provider-args input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
 .restart-notice {
   background: var(--accent-dim);
   border: 1px solid rgba(200, 164, 92, 0.2);
@@ -2254,6 +2311,21 @@ html, body {
 
   .settings-section .form-row {
     grid-template-columns: 1fr;
+  }
+
+  /* Agent provider row: stack on mobile */
+  .agent-provider-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .agent-provider-args {
+    width: 100%;
+  }
+
+  .agent-provider-args label {
+    font-size: 9px;
   }
 
   .settings-footer {
