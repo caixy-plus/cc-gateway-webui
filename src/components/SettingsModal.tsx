@@ -44,10 +44,12 @@ interface Props {
   config: GatewayConfig | null;
   onClose: () => void;
   onSave: (config: Partial<GatewayConfig>) => Promise<SaveConfigResult>;
-  onRestart: () => void;
+  /** Restart daemon immediately (save flow already showed confirm). */
+  onRestartNow: () => void | Promise<void>;
+  restarting?: boolean;
 }
 
-export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRestart }) => {
+export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRestartNow, restarting }) => {
   const { t } = useI18n();
   const [form, setForm] = useState<GatewayConfig | null>(null);
   const [changedKeys, setChangedKeys] = useState<Set<string>>(new Set());
@@ -150,7 +152,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
 
   const handleRestartNow = () => {
     setShowRestartDialog(false);
-    onRestart();
+    void onRestartNow();
   };
 
   const restartFieldsLabel = restartDialogFields.join(', ');
@@ -365,6 +367,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
         message={t('settings.restart_after_save_message', { fields: restartFieldsLabel })}
         confirmLabel={t('app.restart_now')}
         cancelLabel={t('app.later')}
+        loading={restarting}
         onConfirm={handleRestartNow}
         onCancel={() => setShowRestartDialog(false)}
       />

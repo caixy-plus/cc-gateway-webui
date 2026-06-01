@@ -443,13 +443,8 @@ const App: React.FC = () => {
   // Server handles source filtering; sessions already filtered by sourceFilter
   const displaySessions = sessions;
 
-  const handleRestart = () => {
+  const performRestart = async () => {
     if (restarting) return;
-    setRestartConfirm(true);
-  };
-
-  const confirmRestart = async () => {
-    setRestartConfirm(false);
     setRestarting(true);
     try {
       const data = await api.restart();
@@ -459,6 +454,16 @@ const App: React.FC = () => {
     } finally {
       setRestarting(false);
     }
+  };
+
+  const handleRestart = () => {
+    if (restarting) return;
+    setRestartConfirm(true);
+  };
+
+  const confirmRestart = async () => {
+    setRestartConfirm(false);
+    await performRestart();
   };
 
   if (needsToken) {
@@ -531,7 +536,8 @@ const App: React.FC = () => {
           config={config}
           onClose={() => setShowSettings(false)}
           onSave={saveConfig}
-          onRestart={handleRestart}
+          onRestartNow={performRestart}
+          restarting={restarting}
         />
       )}
       {showPairing && (
