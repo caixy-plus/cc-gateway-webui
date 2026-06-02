@@ -284,36 +284,44 @@ html, body {
   background: var(--bg-elevated);
 }
 
-/* Source filter selector */
-.source-filter-pill {
+.platform-filter-bar {
+  padding: 10px 12px 12px;
   display: flex;
-  gap: 2px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 2px;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--border-medium);
 }
 
-.source-filter-pill button {
-  padding: 3px 7px;
+.platform-filter-bar::-webkit-scrollbar { height: 3px; }
+.platform-filter-bar::-webkit-scrollbar-track { background: transparent; }
+.platform-filter-bar::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
+
+.platform-filter-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   font-size: 12px;
   line-height: 1;
-  background: transparent;
-  border: none;
-  border-radius: 3px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.12s ease;
 }
 
-.source-filter-pill button.active {
-  background: var(--accent);
-  color: var(--bg-void);
+.platform-filter-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
 }
 
-.source-filter-pill button:hover:not(.active) {
-  color: var(--text-secondary);
-  background: var(--bg-elevated);
+.platform-filter-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 
 /* Chat header language selector */
@@ -382,6 +390,17 @@ html, body {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-dim);
+}
+
+.new-session-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.new-session-btn.disabled:hover {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
 }
 
 /* Session list */

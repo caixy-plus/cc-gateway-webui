@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { api } from '@/api/client';
-import type { Session, PlatformInfo, ThemeMode, SourceFilter } from '@/types';
+import {
+  PLATFORM_FILTERS,
+  type PlatformFilter,
+  type Session,
+  type PlatformInfo,
+  type ThemeMode,
+} from '@/types';
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -30,6 +36,7 @@ function platformIcon(platform: string): string {
     case 'feishu': return '📱';
     case 'telegram': return '✈️';
     case 'qq': return '🐧';
+    case 'tui': return '⌨️';
     default: return '🔌';
   }
 }
@@ -51,7 +58,7 @@ interface Props {
   platforms: PlatformInfo[];
   theme: ThemeMode;
   version: string;
-  sourceFilter: SourceFilter;
+  platformFilter: PlatformFilter;
   mobileMenuOpen: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
@@ -60,7 +67,7 @@ interface Props {
   onOpenPairing: () => void;
   onThemeChange: (theme: ThemeMode) => void;
   onRestart: () => void;
-  onSourceFilterChange: (filter: SourceFilter) => void;
+  onPlatformFilterChange: (filter: PlatformFilter) => void;
   onToggleRequirePairing?: (platform: string, value: boolean) => void;
   onCloseMobileMenu?: () => void;
   restarting?: boolean;
@@ -73,7 +80,7 @@ export const SessionList: React.FC<Props> = ({
   platforms,
   theme,
   version,
-  sourceFilter,
+  platformFilter,
   mobileMenuOpen,
   onSelect,
   onDelete,
@@ -82,13 +89,14 @@ export const SessionList: React.FC<Props> = ({
   onOpenPairing,
   onThemeChange,
   onRestart,
-  onSourceFilterChange,
+  onPlatformFilterChange,
   onToggleRequirePairing,
   onCloseMobileMenu,
   restarting,
   pairingCount,
 }) => {
   const { t } = useI18n();
+  const canCreate = platformFilter === 'webui';
   const [checking, setChecking] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const [updateMsgKind, setUpdateMsgKind] = useState<'ok' | 'error'>('ok');
@@ -153,6 +161,10 @@ export const SessionList: React.FC<Props> = ({
     if (updateDialog.state === 'installing') return;
     setUpdateDialog((prev) => ({ ...prev, open: false }));
   };
+
+  const filterOptions = useMemo(() => {
+    return PLATFORM_FILTERS;
+  }, []);
 
   return (
     <div className={`sidebar${mobileMenuOpen ? ' mobile-open' : ''}`}>
@@ -254,7 +266,13 @@ export const SessionList: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="new-session-btn" onClick={onCreate} data-testid="new-session-btn">
+      <div
+        className={`new-session-btn ${canCreate ? '' : 'disabled'}`}
+        onClick={() => canCreate && onCreate()}
+        data-testid="new-session-btn"
+        aria-disabled={!canCreate}
+        title={!canCreate ? t('sidebar.webui_only_create') : undefined}
+      >
         {t('sidebar.new_session')}
       </div>
 
@@ -295,42 +313,23 @@ export const SessionList: React.FC<Props> = ({
         ))}
       </div>
 
-      <div className="source-filter-pill" data-testid="source-filter-pill">
-        <button
-          className={sourceFilter === 'all' ? 'active' : ''}
-          onClick={() => onSourceFilterChange('all')}
-          title={t('sidebar.all_sources')}
-        >
-          ⊙
-        </button>
-        <button
-          className={sourceFilter === 'WebUI' ? 'active' : ''}
-          onClick={() => onSourceFilterChange('WebUI')}
-          title="WebUI"
-        >
-          💻
-        </button>
-        <button
-          className={sourceFilter === 'Feishu' ? 'active' : ''}
-          onClick={() => onSourceFilterChange('Feishu')}
-          title="Feishu"
-        >
-          📱
-        </button>
-        <button
-          className={sourceFilter === 'Telegram' ? 'active' : ''}
-          onClick={() => onSourceFilterChange('Telegram')}
-          title="Telegram"
-        >
-          ✈️
-        </button>
-        <button
-          className={sourceFilter === 'TUI' ? 'active' : ''}
-          onClick={() => onSourceFilterChange('TUI')}
-          title="TUI"
-        >
-          ⌨
-        </button>
+      <div
+        className="platform-filter-bar"
+        aria-label={t('sidebar.platform_filter')}
+        data-testid="platform-filter-bar"
+      >
+        {filterOptions.map((p) => (
+          <button
+            key={p}
+            type="button"
+            className={`platform-filter-btn ${platformFilter === p ? 'active' : ''}`}
+            onClick={() => onPlatformFilterChange(p)}
+            title={t(`sidebar.platform.${p}`)}
+            aria-label={t(`sidebar.platform.${p}`)}
+          >
+            {platformIcon(p)}
+          </button>
+        ))}
       </div>
 
       {platforms.length > 0 && (

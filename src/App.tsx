@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
 import { joinDir } from '@/utils/path';
-import type { Session, Message, PlatformInfo, GatewayConfig, SourceFilter } from '@/types';
+import type { Session, Message, PlatformInfo, GatewayConfig, PlatformFilter } from '@/types';
 
 const App: React.FC = () => {
   const { t, locale, setLocale } = useI18n();
@@ -31,7 +31,7 @@ const App: React.FC = () => {
   const [platforms, setPlatforms] = useState<PlatformInfo[]>([]);
   const [version, setVersion] = useState('…');
   const [toast, setToast] = useState<{ msg: string; error: boolean } | null>(null);
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('WebUI');
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('webui');
   const [restarting, setRestarting] = useState(false);
   const [starting, setStarting] = useState(false);
   const [restartConfirm, setRestartConfirm] = useState(false);
@@ -105,14 +105,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const data = await api.listSessions(sourceFilter);
+        const data = await api.listSessions({ platform: platformFilter });
         setSessions(data.sessions);
       } catch {}
     };
     fetch();
     const iv = setInterval(fetch, 3000);
     return () => clearInterval(iv);
-  }, [sourceFilter]);
+  }, [platformFilter]);
 
   useEffect(() => {
     const fetchPlatforms = async () => {
@@ -247,6 +247,10 @@ const App: React.FC = () => {
   }, [activeId]);
 
   const createSession = async () => {
+    if (platformFilter !== 'webui') {
+      showToast(t('sidebar.webui_only_create'), true);
+      return;
+    }
     try {
       const currentConfig = config || (await loadConfig());
       const defaultDir = currentConfig?.default_dir || '~';
@@ -433,7 +437,6 @@ const App: React.FC = () => {
   // Only WebUI sessions are operable in WebUI; all others are read-only regardless of state.
   const readOnly = activeSession ? activeSession.source !== 'WebUI' || !activeSession.active : true;
 
-  // Server handles source filtering; sessions already filtered by sourceFilter
   const displaySessions = sessions;
 
   const performRestart = async () => {
@@ -474,7 +477,7 @@ const App: React.FC = () => {
         platforms={platforms}
         theme={theme}
         version={version}
-        sourceFilter={sourceFilter}
+        platformFilter={platformFilter}
         mobileMenuOpen={mobileMenuOpen}
         onSelect={(id) => {
           setActiveId(id);
@@ -488,7 +491,7 @@ const App: React.FC = () => {
         }}
         onThemeChange={setTheme}
         onRestart={handleRestart}
-        onSourceFilterChange={setSourceFilter}
+        onPlatformFilterChange={setPlatformFilter}
         restarting={restarting}
         onOpenPairing={() => setShowPairing(true)}
         pairingCount={pairingCount}

@@ -114,7 +114,16 @@ export interface PlatformInfo {
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
 
-export type SourceFilter = 'all' | 'WebUI' | 'Feishu' | 'Telegram' | 'TUI';
+/** Session list filter — fixed platform ids from the gateway. */
+export type PlatformFilter = 'webui' | 'feishu' | 'telegram' | 'qq' | 'tui';
+
+export const PLATFORM_FILTERS: PlatformFilter[] = [
+  'webui',
+  'tui',
+  'feishu',
+  'telegram',
+  'qq',
+];
 
 /** Which config fields need a daemon restart vs apply live (from GET /api/config). */
 export interface ConfigRestartPolicy {

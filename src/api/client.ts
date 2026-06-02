@@ -139,8 +139,14 @@ async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSi
 }
 
 export const api = {
-  listSessions: (source?: string) =>
-    fetchJSON<{ sessions: Session[] }>(`/api/sessions${source ? `?source=${encodeURIComponent(source)}` : ''}`),
+  listSessions: (opts?: { platform?: string; channelId?: string; source?: string }) => {
+    const params: string[] = [];
+    if (opts?.platform) params.push(`platform=${encodeURIComponent(opts.platform)}`);
+    if (opts?.channelId) params.push(`channel_id=${encodeURIComponent(opts.channelId)}`);
+    if (opts?.source) params.push(`source=${encodeURIComponent(opts.source)}`);
+    const qs = params.length ? `?${params.join('&')}` : '';
+    return fetchJSON<{ sessions: Session[] }>(`/api/sessions${qs}`);
+  },
 
   createSession: (title: string, workDir = '~') =>
     fetchJSON<{ session?: Session; error?: string }>('/api/sessions', {
