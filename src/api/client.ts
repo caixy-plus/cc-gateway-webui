@@ -2,13 +2,50 @@ import type { Session, GatewayConfig, PlatformInfo } from '@/types';
 
 const API_BASE = '';
 
+const TOKEN_KEY = 'cc_gateway_token';
+
 function getToken(): string | null {
-  return sessionStorage.getItem('cc_gateway_token');
+  const fromSession = sessionStorage.getItem(TOKEN_KEY);
+  if (fromSession) return fromSession;
+
+  const fromLocal = (() => {
+    try {
+      return localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  })();
+  if (fromLocal) {
+    sessionStorage.setItem(TOKEN_KEY, fromLocal);
+    return fromLocal;
+  }
+
+  const m = document.cookie.match(/(?:^|;\s*)cc_gateway_token=([^;]*)/);
+  if (m && m[1]) {
+    const decoded = (() => {
+      try {
+        return decodeURIComponent(m[1]);
+      } catch {
+        return m[1];
+      }
+    })();
+    if (decoded) {
+      sessionStorage.setItem(TOKEN_KEY, decoded);
+      return decoded;
+    }
+  }
+
+  return null;
 }
 
 export function setToken(token: string) {
-  sessionStorage.setItem('cc_gateway_token', token);
-  try { localStorage.setItem('cc_gateway_token', token); } catch {}
+  sessionStorage.setItem(TOKEN_KEY, token);
+  try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+  // Also set as cookie for robust cross-session persistence
+  try {
+    const encoded = encodeURIComponent(token);
+    document.cookie = `cc_gateway_token=${encoded}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  } catch {}
 }
 
 function getAuthHeaders(): Record<string, string> {
