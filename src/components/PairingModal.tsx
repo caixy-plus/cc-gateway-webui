@@ -41,10 +41,10 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
         setPending((prev) => prev.filter((p) => p.pairing_code !== code));
         fetchData();
       } else {
-        setError(data.error || t('pairing.approve_failed'));
+        throw new Error(t('pairing.approve_failed'));
       }
-    } catch {
-      setError(t('pairing.approve_failed'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('pairing.approve_failed'));
     } finally {
       setLoading(false);
     }
@@ -57,10 +57,10 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
       if (data.status === 'rejected') {
         setPending((prev) => prev.filter((p) => p.pairing_code !== code));
       } else {
-        setError(data.error || t('pairing.reject_failed'));
+        throw new Error(t('pairing.reject_failed'));
       }
-    } catch {
-      setError(t('pairing.reject_failed'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('pairing.reject_failed'));
     } finally {
       setLoading(false);
     }
@@ -72,8 +72,7 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
       prev.map((c) => (c.platform === chat.platform && c.chat_id === chat.chat_id ? { ...c, enabled: next } : c))
     );
     try {
-      const data = await api.setApprovalEnabled(chat.platform, chat.chat_id, next);
-      if (data.error) throw new Error(data.error);
+      await api.setApprovalEnabled(chat.platform, chat.chat_id, next);
     } catch {
       setApproved((prev) =>
         prev.map((c) =>
@@ -98,10 +97,10 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
       if (data.status === 'deleted') {
         setApproved((prev) => prev.filter((c) => !(c.platform === chat.platform && c.chat_id === chat.chat_id)));
       } else {
-        setError(data.error || t('pairing.remove_failed'));
+        throw new Error(t('pairing.remove_failed'));
       }
-    } catch {
-      setError(t('pairing.remove_failed'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('pairing.remove_failed'));
     } finally {
       setLoading(false);
     }

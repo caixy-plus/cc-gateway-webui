@@ -107,7 +107,6 @@ export const SessionList: React.FC<Props> = ({
     setUpdateMsg(null);
     try {
       const data = await api.checkUpdate();
-      if (data.error) throw new Error(data.error);
       const latest = (data.latest_version || data.latest || '').replace(/^v/, '');
       const current = data.current_version || data.current || version;
       const body = data.release_notes || data.body || '';
@@ -139,8 +138,7 @@ export const SessionList: React.FC<Props> = ({
     if (updateDialog.state === 'installing') return;
     setUpdateDialog((prev) => ({ ...prev, state: 'installing', error: '' }));
     try {
-      const data = await api.installUpdate();
-      if (data.error) throw new Error(data.error);
+      await api.installUpdate();
       setUpdateDialog((prev) => ({ ...prev, state: 'install_started', error: '' }));
     } catch (err) {
       setUpdateDialog((prev) => ({

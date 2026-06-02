@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [showDir, setShowDir] = useState(false);
   const [dirItems, setDirItems] = useState<string[]>([]);
   const [currentDir, setCurrentDir] = useState('~');
+  const [dirError, setDirError] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [config, setConfig] = useState<GatewayConfig | null>(null);
@@ -129,8 +130,7 @@ const App: React.FC = () => {
     // Optimistic update; revert on failure.
     setPlatforms((prev) => prev.map((p) => (p.name === platform ? { ...p, require_pairing: value } : p)));
     try {
-      const res = await api.setRequirePairing(platform, value);
-      if (res.error) throw new Error(res.error);
+      await api.setRequirePairing(platform, value);
     } catch {
       setPlatforms((prev) => prev.map((p) => (p.name === platform ? { ...p, require_pairing: !value } : p)));
     }
@@ -302,10 +302,7 @@ const App: React.FC = () => {
 
     try {
       const data = await api.sendMessage(activeId, text, controller.signal);
-      if (data.error) {
-        setMessages((prev) => [...prev, { role: 'system' as const, content: stripAnsi(data.error || 'Error') }]);
-        setSending(false);
-      } else if (data.response) {
+      if (data.response) {
         // Bug 4 fix: strip ANSI from POST response text
         setMessages((prev) => [...prev, { role: 'system' as const, content: stripAnsi(data.response || '') }]);
         setSending(false);
@@ -334,11 +331,7 @@ const App: React.FC = () => {
     setStarting(true);
     try {
       const data = await api.startSession(activeId);
-      if (data.error) {
-        showToast(data.error || t('app.failed_start'), true);
-      } else {
-        setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, ...data.session, active: true } : s)));
-      }
+      setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, ...data.session, active: true } : s)));
     } catch (e: unknown) {
       showToast(errMsg(e, t('app.failed_start')), true);
     } finally {
@@ -360,6 +353,7 @@ const App: React.FC = () => {
   const openDirModal = async () => {
     const dir = activeSession?.work_dir || '~';
     setCurrentDir(dir);
+    setDirError('');
     setShowDir(true);
     try {
       const data = await api.listDir(dir, activeId, showHidden);
@@ -367,7 +361,7 @@ const App: React.FC = () => {
       setCurrentDir(data.dir || dir);
     } catch (e: unknown) {
       setDirItems([]);
-      showToast(errMsg(e, t('app.failed_list_dir')), true);
+      setDirError(errMsg(e, t('app.failed_list_dir')));
     }
   };
 
@@ -377,8 +371,9 @@ const App: React.FC = () => {
       const dirData = await api.listDir(target, activeId, showHidden);
       setDirItems(dirData.items || []);
       setCurrentDir(dirData.dir || target);
+      setDirError('');
     } catch (e: unknown) {
-      showToast(errMsg(e, t('app.failed_list_dir')), true);
+      setDirError(errMsg(e, t('app.failed_list_dir')));
     }
   };
 
@@ -388,6 +383,7 @@ const App: React.FC = () => {
       const dirData = await api.listDir(parent, activeId, showHidden);
       setDirItems(dirData.items || []);
       setCurrentDir(dirData.dir || parent);
+      setDirError('');
     } catch (_e: unknown) {
       // ensure_under_home rejects paths above home — refresh at
       // current dir so the UI doesn't appear stuck.
@@ -398,6 +394,7 @@ const App: React.FC = () => {
       } catch (_e2: unknown) {
         // ignore
       }
+      setDirError(errMsg(_e, t('app.failed_list_dir')));
     }
   };
 
@@ -410,9 +407,10 @@ const App: React.FC = () => {
       await api.changeDir(dir, activeId);
       showToast(t('app.dir_set_to', { dir }));
       setShowDir(false);
+      setDirError('');
       setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, work_dir: dir } : s)));
     } catch (e: unknown) {
-      showToast(errMsg(e, t('app.failed_set_dir')), true);
+      setDirError(errMsg(e, t('app.failed_set_dir')));
     }
   };
 
@@ -424,7 +422,7 @@ const App: React.FC = () => {
         setConfig((prev) => (prev ? { ...prev, ...partial } : null));
         return data;
       }
-      throw new Error(data.error || t('app.save_failed'));
+      throw new Error(t('app.save_failed'));
     } catch (e: unknown) {
       showToast(errMsg(e, t('app.failed_save_config')), true);
       throw e;
@@ -443,7 +441,7 @@ const App: React.FC = () => {
     setRestarting(true);
     try {
       const data = await api.restart();
-      showToast(data.status === 'restarting' ? t('app.restarting') : (data.error || t('app.restart_requested')));
+      showToast(data.status === 'restarting' ? t('app.restarting') : t('app.restart_requested'));
     } catch (e: unknown) {
       showToast(errMsg(e, t('app.restart_failed')), true);
     } finally {
@@ -519,6 +517,8 @@ const App: React.FC = () => {
           currentDir={currentDir}
           items={dirItems}
           showHidden={showHidden}
+          error={dirError}
+          onErrorChange={setDirError}
           onClose={() => setShowDir(false)}
           onEnter={enterDir}
           onGoUp={goUpDir}

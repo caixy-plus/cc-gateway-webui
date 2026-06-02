@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useI18n } from '@/i18n';
 
 interface Props {
   currentDir: string;
   items: string[];
   showHidden: boolean;
+  error: string;
+  onErrorChange: (error: string) => void;
   onClose: () => void;
   onEnter: (name: string) => void;
   onGoUp: () => void;
@@ -16,6 +18,8 @@ export const DirModal: React.FC<Props> = ({
   currentDir,
   items,
   showHidden,
+  error,
+  onErrorChange,
   onClose,
   onEnter,
   onGoUp,
@@ -23,6 +27,12 @@ export const DirModal: React.FC<Props> = ({
   onToggleHidden,
 }) => {
   const { t } = useI18n();
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => onErrorChange(''), 3000);
+    return () => clearTimeout(timer);
+  }, [error, onErrorChange]);
   // Also hide .. when at a Windows drive root (e.g. C:\)
   const isRoot =
     currentDir === '~' ||
@@ -36,6 +46,26 @@ export const DirModal: React.FC<Props> = ({
           <h3>{currentDir}</h3>
           <button onClick={onClose}>×</button>
         </div>
+        {error && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 52,
+              left: 0,
+              right: 0,
+              padding: '8px 20px',
+              background: 'var(--bg-surface)',
+              borderTop: '1px solid var(--danger, #ef4444)',
+              color: 'var(--danger, #ef4444)',
+              fontSize: '12px',
+              fontFamily: 'var(--font-mono)',
+              zIndex: 1,
+              animation: 'toast-enter 0.2s ease-out',
+            }}
+          >
+            {error}
+          </div>
+        )}
         <div className="dir-list">
           {!isRoot && (
             <div className="dir-item" onClick={onGoUp}>

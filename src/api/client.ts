@@ -89,6 +89,10 @@ async function fetchJSON<T>(url: string, options?: RequestInit, signal?: AbortSi
   }
 
   if (bodyJson !== null) {
+    const extracted = extractError(bodyJson);
+    if (extracted.message) {
+      throw new ApiError(extracted.message, res.status, extracted.errorKey);
+    }
     return bodyJson as T;
   }
   if (!bodyText) {
