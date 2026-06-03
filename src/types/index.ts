@@ -72,6 +72,8 @@ export interface GatewayConfig {
   telegram: {
     enabled: boolean;
     bot_token: string;
+    /** HTTP/SOCKS proxy for Telegram Bot API only; empty = direct connection */
+    proxy: string;
     require_pairing: boolean;
   };
   qq: {

@@ -4,6 +4,14 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { api } from '@/api/client';
 import type { AgentCatalogEntry, GatewayConfig, SaveConfigResult } from '@/types';
 
+/** Per-provider CLI flags users can click to fill default_args (replaces input). */
+const AGENT_ARG_QUICK_LINKS: Record<string, readonly string[]> = {
+  claude: ['--dangerously-skip-permissions', '--yolo'],
+  cursor: ['--yolo'],
+  opencode: ['--yolo'],
+  pi: ['--yolo'],
+};
+
 // ---- helper: single provider config row ----
 
 interface ProviderConfigRowProps {
@@ -16,6 +24,9 @@ interface ProviderConfigRowProps {
 
 const ProviderConfigRow: React.FC<ProviderConfigRowProps> = ({ label, provider, form, update, t }) => {
   const cfg = (form.agent as unknown as Record<string, Record<string, unknown>>)[provider];
+  const defaultArgs = (cfg?.default_args as string) || '';
+  const quickLinks = AGENT_ARG_QUICK_LINKS[provider] ?? [];
+
   return (
     <div className="agent-provider-row">
       <div className="agent-provider-header">
@@ -28,12 +39,31 @@ const ProviderConfigRow: React.FC<ProviderConfigRowProps> = ({ label, provider, 
         <label htmlFor={`agent_${provider}_enabled`}>{label}</label>
       </div>
       <div className="agent-provider-args">
-        <label>{t('settings.default_args')}</label>
-        <input
-          type="text"
-          value={(cfg?.default_args as string) || ''}
-          onChange={(e) => update(`agent.${provider}.default_args`, e.target.value)}
-        />
+        <div className="agent-provider-args-line">
+          <label>{t('settings.default_args')}</label>
+          <input
+            type="text"
+            value={defaultArgs}
+            onChange={(e) => update(`agent.${provider}.default_args`, e.target.value)}
+          />
+        </div>
+        {quickLinks.length > 0 && (
+          <div className="field-hint agent-default-args-hint">
+            {quickLinks.map((arg, i) => (
+              <React.Fragment key={arg}>
+                {i > 0 ? ' · ' : null}
+                <button
+                  type="button"
+                  className={`field-hint-link${defaultArgs.trim() === arg ? ' active' : ''}`}
+                  title={t('settings.default_args_link_title')}
+                  onClick={() => update(`agent.${provider}.default_args`, arg)}
+                >
+                  {arg}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -365,6 +395,18 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
                 <input type="text" value={form.telegram.bot_token} onChange={(e) => update('telegram.bot_token', e.target.value)} />
               </div>
             </div>
+            <div className="form-row full">
+              <div className="form-group">
+                <label>{t('settings.telegram_proxy')}</label>
+                <input
+                  type="text"
+                  placeholder={t('settings.telegram_proxy_placeholder')}
+                  value={form.telegram.proxy ?? ''}
+                  onChange={(e) => update('telegram.proxy', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="field-hint">{t('settings.telegram_proxy_hint')}</div>
           </div>
 
           <div className="settings-section">
