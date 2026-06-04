@@ -2,7 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useI18n, type Locale } from '@/i18n';
 import type { Session, Message, AgentCatalogEntry } from '@/types';
 import { api } from '@/api/client';
+import { FileAttachmentBubble } from '@/components/FileAttachmentBubble';
+import { ModelPickerBubble } from '@/components/ModelPickerBubble';
 import { StartSessionControls } from '@/components/StartSessionControls';
+import { parseFileAttachment } from '@/utils/fileAttachment';
+import { parseModelPicker } from '@/utils/modelPicker';
 import { wasWebuiSessionStarted } from '@/utils/webuiSession';
 
 type SlashCommandDef = {
@@ -23,6 +27,9 @@ interface Props {
   locale: Locale;
   onInputChange: (v: string) => void;
   onSend: () => void;
+  onSelectModel?: (modelId: string) => void;
+  onUploadFile?: (file: File) => void;
+  uploading?: boolean;
   /** First start — user picks provider in empty state */
   onStartSession: () => void;
   /** After stop — resume stored provider only */
@@ -47,6 +54,9 @@ export const ChatArea: React.FC<Props> = ({
   locale,
   onInputChange,
   onSend,
+  onSelectModel,
+  onUploadFile,
+  uploading = false,
   onStartSession,
   onResumeSession,
   startProviders,
@@ -61,6 +71,7 @@ export const ChatArea: React.FC<Props> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // WebUI navigation (/cd, /ll, /pwd, /mkdir) and session management (/agent,
   // /agents, /agent_history) are handled via toolbar/sidebar UI — not chat input.
@@ -184,9 +195,22 @@ export const ChatArea: React.FC<Props> = ({
             )}
           </div>
         )}
-        {messages.map((m, i) => (
+        {messages.map((m, i) => {
+          const attachment = parseFileAttachment(m.content);
+          const modelPicker = parseModelPicker(m.content);
+          return (
           <div key={i} className={`message ${m.role}`}>
-            {m.content}
+            {modelPicker && onSelectModel ? (
+              <ModelPickerBubble
+                picker={modelPicker}
+                disabled={readOnly || sending}
+                onSelect={onSelectModel}
+              />
+            ) : attachment ? (
+              <FileAttachmentBubble attachment={attachment} />
+            ) : (
+              m.content
+            )}
             {m.role === 'permission_request' && m.requestId && (
               <PermissionActions
                 sessionId={session?.id || ''}
@@ -194,7 +218,8 @@ export const ChatArea: React.FC<Props> = ({
               />
             )}
           </div>
-        ))}
+          );
+        })}
         {sending && (
           <div className="message assistant typing-indicator" data-testid="typing-indicator">
             <span className="dot" />
@@ -241,6 +266,20 @@ export const ChatArea: React.FC<Props> = ({
           </>
         ) : (
           <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="file-input-hidden"
+              aria-hidden
+              tabIndex={-1}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onUploadFile) {
+                  onUploadFile(file);
+                }
+                e.target.value = '';
+              }}
+            />
             <div className="input-wrapper">
               <input
                 data-testid="message-input"
@@ -319,8 +358,20 @@ export const ChatArea: React.FC<Props> = ({
                 </div>
               )}
             </div>
-            <button onClick={onSend} disabled={readOnly || sending || !session} data-testid="send-btn">
-              {t('chat.exec')}
+            {onUploadFile && (
+              <button
+                type="button"
+                className="attach-btn"
+                title={t('chat.attach_file')}
+                disabled={readOnly || sending || uploading || !session}
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="attach-file-btn"
+              >
+                📎
+              </button>
+            )}
+            <button onClick={onSend} disabled={readOnly || sending || uploading || !session} data-testid="send-btn">
+              {uploading ? '...' : t('chat.exec')}
             </button>
           </>
         )}

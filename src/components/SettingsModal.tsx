@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useI18n, type TranslationKey } from '@/i18n';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { api } from '@/api/client';
-import type { AgentCatalogEntry, GatewayConfig, SaveConfigResult } from '@/types';
+import { PlatformSettingsSection } from '@/components/PlatformSettingsSection';
+import type { AgentCatalogEntry, GatewayConfig, PlatformInfo, SaveConfigResult } from '@/types';
+import { normalizeGatewayConfig } from '@/utils/normalizeConfig';
 
 /** Per-provider CLI flags users can click to fill default_args (replaces input). */
 const AGENT_ARG_QUICK_LINKS: Record<string, readonly string[]> = {
@@ -101,6 +103,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
   const { t } = useI18n();
   const [form, setForm] = useState<GatewayConfig | null>(null);
   const [agentCatalog, setAgentCatalog] = useState<AgentCatalogEntry[]>([]);
+  const [platformCatalog, setPlatformCatalog] = useState<PlatformInfo[]>([]);
   const [changedKeys, setChangedKeys] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -109,7 +112,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
 
   useEffect(() => {
     if (config) {
-      setForm(JSON.parse(JSON.stringify(config)));
+      setForm(normalizeGatewayConfig(JSON.parse(JSON.stringify(config)) as GatewayConfig));
       setChangedKeys(new Set());
       setLoadError(false);
       void api
@@ -128,6 +131,10 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
           });
         })
         .catch(() => setAgentCatalog([]));
+      void api
+        .getPlatforms()
+        .then((data) => setPlatformCatalog(data.platforms))
+        .catch(() => setPlatformCatalog([]));
     }
   }, [config]);
 
@@ -341,107 +348,14 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
             ))}
           </div>
 
-          <div className="settings-section">
-            <h4>
-              {t('settings.feishu')}
-              <span className={`section-badge${form.feishu.enabled ? ' on' : ''}`}>
-                {form.feishu.enabled ? t('settings.on') : t('settings.off')}
-              </span>
-            </h4>
-            <div className="checkbox-group">
-              <div className="checkbox-row">
-                <input type="checkbox" id="feishu_enabled" checked={form.feishu.enabled} onChange={(e) => update('feishu.enabled', e.target.checked)} />
-                <label htmlFor="feishu_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
-              </div>
-              <div className="checkbox-row">
-                <input type="checkbox" id="feishu_require_pairing" checked={form.feishu.require_pairing} onChange={(e) => update('feishu.require_pairing', e.target.checked)} />
-                <label htmlFor="feishu_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
-              </div>
-            </div>
-            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.app_id')}</label>
-                <input type="text" value={form.feishu.app_id} onChange={(e) => update('feishu.app_id', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.app_secret')}</label>
-                <input type="text" value={form.feishu.app_secret} onChange={(e) => update('feishu.app_secret', e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <h4>
-              {t('settings.telegram')}
-              <span className={`section-badge${form.telegram.enabled ? ' on' : ''}`}>
-                {form.telegram.enabled ? t('settings.on') : t('settings.off')}
-              </span>
-            </h4>
-            <div className="checkbox-group">
-              <div className="checkbox-row">
-                <input type="checkbox" id="tg_enabled" checked={form.telegram.enabled} onChange={(e) => update('telegram.enabled', e.target.checked)} />
-                <label htmlFor="tg_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
-              </div>
-              <div className="checkbox-row">
-                <input type="checkbox" id="tg_require_pairing" checked={form.telegram.require_pairing} onChange={(e) => update('telegram.require_pairing', e.target.checked)} />
-                <label htmlFor="tg_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
-              </div>
-            </div>
-            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
-            <div className="form-row full">
-              <div className="form-group">
-                <label>{t('settings.bot_token')}</label>
-                <input type="text" value={form.telegram.bot_token} onChange={(e) => update('telegram.bot_token', e.target.value)} />
-              </div>
-            </div>
-            <div className="form-row full">
-              <div className="form-group">
-                <label>{t('settings.telegram_proxy')}</label>
-                <input
-                  type="text"
-                  placeholder={t('settings.telegram_proxy_placeholder')}
-                  value={form.telegram.proxy ?? ''}
-                  onChange={(e) => update('telegram.proxy', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="field-hint">{t('settings.telegram_proxy_hint')}</div>
-          </div>
-
-          <div className="settings-section">
-            <h4>
-              {t('settings.qq')}
-              <span className={`section-badge${form.qq?.enabled ? ' on' : ''}`}>
-                {form.qq?.enabled ? t('settings.on') : t('settings.off')}
-              </span>
-            </h4>
-            <div className="checkbox-group">
-              <div className="checkbox-row">
-                <input type="checkbox" id="qq_enabled" checked={form.qq?.enabled ?? false} onChange={(e) => update('qq.enabled', e.target.checked)} />
-                <label htmlFor="qq_enabled" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.enabled')}</label>
-              </div>
-              <div className="checkbox-row">
-                <input type="checkbox" id="qq_sandbox" checked={form.qq?.sandbox ?? false} onChange={(e) => update('qq.sandbox', e.target.checked)} />
-                <label htmlFor="qq_sandbox" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.qq_sandbox')}</label>
-              </div>
-              <div className="checkbox-row">
-                <input type="checkbox" id="qq_require_pairing" checked={form.qq?.require_pairing ?? true} onChange={(e) => update('qq.require_pairing', e.target.checked)} />
-                <label htmlFor="qq_require_pairing" style={{ textTransform: 'none', letterSpacing: '0' }}>{t('settings.require_pairing')}</label>
-              </div>
-            </div>
-            <div className="field-hint">{t('settings.require_pairing_hint')}</div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('settings.app_id')}</label>
-                <input type="text" value={form.qq?.app_id ?? ''} onChange={(e) => update('qq.app_id', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>{t('settings.app_secret')}</label>
-                <input type="text" value={form.qq?.app_secret ?? ''} onChange={(e) => update('qq.app_secret', e.target.value)} />
-              </div>
-            </div>
-          </div>
+          {platformCatalog.map((entry) => (
+            <PlatformSettingsSection
+              key={entry.id ?? entry.name}
+              entry={entry}
+              form={form}
+              update={update}
+            />
+          ))}
         </div>
 
         <div className="settings-footer">
