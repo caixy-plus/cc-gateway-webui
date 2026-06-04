@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useI18n, type Locale } from '@/i18n';
-import type { Session, Message } from '@/types';
+import type { Session, Message, AgentCatalogEntry } from '@/types';
 import { api } from '@/api/client';
+import { StartSessionControls } from '@/components/StartSessionControls';
+import { wasWebuiSessionStarted } from '@/utils/webuiSession';
 
 type SlashCommandDef = {
   id: string;
@@ -21,7 +23,13 @@ interface Props {
   locale: Locale;
   onInputChange: (v: string) => void;
   onSend: () => void;
-  onStart: () => void;
+  /** First start — user picks provider in empty state */
+  onStartSession: () => void;
+  /** After stop — resume stored provider only */
+  onResumeSession: () => void;
+  startProviders: AgentCatalogEntry[];
+  startProviderId: string;
+  onStartProviderChange: (id: string) => void;
   onStop: () => void;
   onOpenDir: () => void;
   onLocaleChange: (locale: Locale) => void;
@@ -39,7 +47,11 @@ export const ChatArea: React.FC<Props> = ({
   locale,
   onInputChange,
   onSend,
-  onStart,
+  onStartSession,
+  onResumeSession,
+  startProviders,
+  startProviderId,
+  onStartProviderChange,
   onStop,
   onOpenDir,
   onLocaleChange,
@@ -50,57 +62,53 @@ export const ChatArea: React.FC<Props> = ({
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // WebUI navigation (/cd, /ll, /pwd, /mkdir) and session management (/agent,
+  // /agents, /agent_history) are handled via toolbar/sidebar UI — not chat input.
+  // The palette only exposes the 8 in-session control commands.
   const slashCommands: SlashCommandDef[] = [
-    { id: 'help', command: '/help', titleKey: 'cmd.help', descKey: 'cmd.help_desc' },
-    { id: 'agent', command: '/agent', titleKey: 'cmd.agent', descKey: 'cmd.agent_desc' },
-    { id: 'agents', command: '/agents', titleKey: 'cmd.agents', descKey: 'cmd.agents_desc' },
-    { id: 'models', command: '/models', titleKey: 'cmd.models', descKey: 'cmd.models_desc' },
-    { id: 'cd', command: '/cd', titleKey: 'cmd.cd', descKey: 'cmd.cd_desc' },
-    { id: 'll', command: '/ll', titleKey: 'cmd.ll', descKey: 'cmd.ll_desc' },
-    { id: 'pwd', command: '/pwd', titleKey: 'cmd.pwd', descKey: 'cmd.pwd_desc' },
-    { id: 'mkdir', command: '/mkdir', titleKey: 'cmd.mkdir', descKey: 'cmd.mkdir_desc' },
-    { id: 'esc', command: '/esc', titleKey: 'cmd.esc', descKey: 'cmd.esc_desc' },
-    { id: 'stop', command: '/stop', titleKey: 'cmd.stop', descKey: 'cmd.stop_desc' },
-    { id: 'clear', command: '/clear', titleKey: 'cmd.clear', descKey: 'cmd.clear_desc' },
-    { id: 'status', command: '/status', titleKey: 'cmd.status', descKey: 'cmd.status_desc' },
-    { id: 'agent_history', command: '/agent-history', titleKey: 'cmd.agent_history', descKey: 'cmd.agent_history_desc' },
-    { id: 'show_thinking', command: '/show-thinking', titleKey: 'cmd.show_thinking', descKey: 'cmd.show_thinking_desc' },
-    { id: 'hide_thinking', command: '/hide-thinking', titleKey: 'cmd.hide_thinking', descKey: 'cmd.hide_thinking_desc' },
-    { id: 'quit', command: '/quit', titleKey: 'cmd.quit', descKey: 'cmd.quit_desc' },
+    { id: 'quit',         command: '/quit',          titleKey: 'cmd.quit',          descKey: 'cmd.quit_desc' },
+    { id: 'stop',         command: '/stop',          titleKey: 'cmd.stop',          descKey: 'cmd.stop_desc' },
+    { id: 'esc',          command: '/esc',           titleKey: 'cmd.esc',           descKey: 'cmd.esc_desc' },
+    { id: 'clear',        command: '/clear',         titleKey: 'cmd.clear',         descKey: 'cmd.clear_desc' },
+    { id: 'models',       command: '/models',        titleKey: 'cmd.models',        descKey: 'cmd.models_desc' },
+    { id: 'status',       command: '/status',        titleKey: 'cmd.status',        descKey: 'cmd.status_desc' },
+    { id: 'show_thinking',command: '/show_thinking', titleKey: 'cmd.show_thinking', descKey: 'cmd.show_thinking_desc' },
+    { id: 'hide_thinking',command: '/hide_thinking', titleKey: 'cmd.hide_thinking', descKey: 'cmd.hide_thinking_desc' },
   ];
 
-  const isSessionMode = !!(session && session.source === 'WebUI' && session.active);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cmdIndex, setCmdIndex] = useState(0);
-
-  const cmdQuery = (() => {
-    const v = input.trim();
-    // Only open palette for "/xxx" without spaces so it doesn't fight with args.
-    if (!v.startsWith('/')) return null;
-    if (v.includes(' ')) return null;
-    // Always allow opening with just "/".
-    return v.slice(1).toLowerCase();
-  })();
-
-  const cmdMatches = (() => {
-    if (cmdQuery === null) return [];
-    const filtered = slashCommands.filter((c) => c.command.slice(1).toLowerCase().startsWith(cmdQuery));
-    return filtered;
-  })();
+  const [paletteMatches, setPaletteMatches] = useState<SlashCommandDef[]>([]);
+  // Ref flag: arrow-key fills change `input` but must NOT re-filter the list.
+  const arrowNavRef = useRef(false);
 
   useEffect(() => {
-    // Open command palette when typing "/..." and we have matches.
-    const shouldOpen = !!cmdQuery && cmdMatches.length > 0;
-    setCmdOpen(shouldOpen);
+    if (arrowNavRef.current) {
+      arrowNavRef.current = false;
+      return;
+    }
+    const v = input.trim();
+    const isSlash = v.startsWith('/') && !v.includes(' ');
+    if (isSlash) {
+      const q = v.slice(1).toLowerCase();
+      const matches = slashCommands.filter((c) => c.command.slice(1).toLowerCase().startsWith(q));
+      setPaletteMatches(matches);
+      setCmdOpen(matches.length > 0);
+    } else {
+      setPaletteMatches([]);
+      setCmdOpen(false);
+    }
     setCmdIndex(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cmdQuery, cmdMatches.length]);
+  }, [input]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const isWebUIInactive = session && session.source === 'WebUI' && !session.active;
+  const isWebUIFirstStart = isWebUIInactive && !wasWebuiSessionStarted(session);
+  const isWebUIResume = isWebUIInactive && wasWebuiSessionStarted(session);
   const canChangeDir = session && session.source === 'WebUI' && !session.provider_session_id;
 
   return (
@@ -149,17 +157,27 @@ export const ChatArea: React.FC<Props> = ({
         {messages.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">//</div>
-            {isWebUIInactive ? (
+            {isWebUIFirstStart ? (
               <>
                 <div>{t('chat.session_created_hint')}</div>
-                <button
-                  className="restart-btn"
-                  onClick={onStart}
-                  disabled={starting}
-                  style={{ marginTop: '16px' }}
-                >
-                  {starting ? t('chat.starting') : t('chat.start_session')}
-                </button>
+                <StartSessionControls
+                  variant="empty"
+                  providers={startProviders}
+                  selectedProviderId={startProviderId}
+                  onProviderChange={onStartProviderChange}
+                  onStart={onStartSession}
+                  starting={!!starting}
+                />
+              </>
+            ) : isWebUIResume ? (
+              <>
+                <div>{t('chat.session_stopped_hint')}</div>
+                <StartSessionControls
+                  variant="restart"
+                  providerId={session?.provider}
+                  onStart={onResumeSession}
+                  starting={!!starting}
+                />
               </>
             ) : (
               <div>{session ? t('chat.awaiting_input') : t('chat.select_a_session')}</div>
@@ -187,14 +205,17 @@ export const ChatArea: React.FC<Props> = ({
         <div ref={messagesEndRef} />
       </div>
       <div className="input-area">
-        {isWebUIInactive && messages.length > 0 ? (
+        {isWebUIResume ? (
           <div className="restart-area">
             <span className="restart-hint">{t('chat.session_stopped_hint')}</span>
-            <button className="restart-btn" onClick={onStart} disabled={starting}>
-              {starting ? t('chat.restarting') : t('chat.restart_session')}
-            </button>
+            <StartSessionControls
+              variant="restart"
+              providerId={session?.provider}
+              onStart={onResumeSession}
+              starting={!!starting}
+            />
           </div>
-        ) : isWebUIInactive && messages.length === 0 ? (
+        ) : isWebUIFirstStart ? (
           <>
             <div className="input-wrapper">
               <input
@@ -233,19 +254,21 @@ export const ChatArea: React.FC<Props> = ({
                   const composing = isComposing || native.isComposing || native.keyCode === 229;
                   if (composing) return;
 
-                  if (cmdOpen && cmdMatches.length > 0) {
+                  if (cmdOpen && paletteMatches.length > 0) {
                     if (e.key === 'ArrowDown') {
                       e.preventDefault();
-                      const next = Math.min(cmdIndex + 1, cmdMatches.length - 1);
+                      const next = Math.min(cmdIndex + 1, paletteMatches.length - 1);
                       setCmdIndex(next);
-                      onInputChange(cmdMatches[next].command);
+                      arrowNavRef.current = true;
+                      onInputChange(paletteMatches[next].command);
                       return;
                     }
                     if (e.key === 'ArrowUp') {
                       e.preventDefault();
                       const next = Math.max(cmdIndex - 1, 0);
                       setCmdIndex(next);
-                      onInputChange(cmdMatches[next].command);
+                      arrowNavRef.current = true;
+                      onInputChange(paletteMatches[next].command);
                       return;
                     }
                     if (e.key === 'Escape') {
@@ -254,7 +277,6 @@ export const ChatArea: React.FC<Props> = ({
                       return;
                     }
                     if (e.key === 'Enter' && !e.shiftKey) {
-                      // If palette is open, Enter sends the currently filled command.
                       e.preventDefault();
                       onSend();
                       setCmdOpen(false);
@@ -274,36 +296,24 @@ export const ChatArea: React.FC<Props> = ({
                 disabled={readOnly || sending || !session}
               />
 
-              {cmdOpen && cmdMatches.length > 0 && (
+              {cmdOpen && paletteMatches.length > 0 && (
                 <div className="cmd-palette" role="listbox" aria-label={t('cmd.palette')}>
-                  <div className="cmd-palette-header">
-                    <span className="cmd-pill">{isSessionMode ? t('cmd.session_mode') : t('cmd.no_session_mode')}</span>
-                    <span className="cmd-hint">{t('cmd.palette_hint')}</span>
-                  </div>
-                  {cmdMatches.map((c, i) => (
+                  {paletteMatches.map((c, i) => (
                     <div
                       key={c.id}
                       className={`cmd-item ${i === cmdIndex ? 'active' : ''}`}
                       role="option"
                       aria-selected={i === cmdIndex}
-                      onMouseEnter={() => {
-                        setCmdIndex(i);
-                        onInputChange(c.command);
-                      }}
+                      onMouseEnter={() => setCmdIndex(i)}
                       onMouseDown={(evt) => {
-                        // Prevent input blur before click finishes.
                         evt.preventDefault();
                         onInputChange(c.command);
                         setCmdOpen(false);
-                        // Keep focus on input for Enter-to-send.
                         requestAnimationFrame(() => inputRef.current?.focus());
                       }}
                     >
-                      <div className="cmd-row">
-                        <code className="cmd-code">{c.command}</code>
-                        <span className="cmd-title">{t(c.titleKey)}</span>
-                      </div>
-                      <div className="cmd-desc">{t(c.descKey)}</div>
+                      <code className="cmd-code">{c.command}</code>
+                      <span className="cmd-title">{t(c.titleKey)}</span>
                     </div>
                   ))}
                 </div>

@@ -161,10 +161,14 @@ export const api = {
       signal
     ),
 
-  startSession: (sessionId: string) =>
+  /** Start/resume session. Pass `provider` only for first-time start; omit to resume stored agent. */
+  startSession: (sessionId: string, provider?: string) =>
     fetchJSON<{ status?: string; session?: Session; error?: string }>(
       `/api/sessions/${sessionId}/start`,
-      { method: 'POST' }
+      {
+        method: 'POST',
+        body: JSON.stringify(provider ? { provider } : {}),
+      }
     ),
 
   // NOTE: stop (POST) and delete (DELETE) share the same URL /api/sessions/{id}.

@@ -12,12 +12,32 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
 import { joinDir } from '@/utils/path';
-import type { Session, Message, PlatformInfo, GatewayConfig, PlatformFilter } from '@/types';
+import type {
+  Session,
+  Message,
+  PlatformInfo,
+  GatewayConfig,
+  PlatformFilter,
+  AgentsApiResponse,
+  AgentCatalogEntry,
+} from '@/types';
+import {
+  resolveStartProviderId,
+  saveLastStartProvider,
+} from '@/utils/startProviderPreference';
+
+const ACTIVE_SESSION_KEY = 'cc_gateway_active_session';
 
 const App: React.FC = () => {
   const { t, locale, setLocale } = useI18n();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(ACTIVE_SESSION_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -28,6 +48,8 @@ const App: React.FC = () => {
   const [showHidden, setShowHidden] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [config, setConfig] = useState<GatewayConfig | null>(null);
+  const [agentsCatalog, setAgentsCatalog] = useState<AgentsApiResponse | null>(null);
+  const [startProviderId, setStartProviderId] = useState('claude');
   const [platforms, setPlatforms] = useState<PlatformInfo[]>([]);
   const [version, setVersion] = useState('…');
   const [toast, setToast] = useState<{ msg: string; error: boolean } | null>(null);
@@ -86,6 +108,17 @@ const App: React.FC = () => {
     try {
       const data = await api.getConfig();
       setConfig(data.config);
+      const catalog =
+        data.agents ??
+        (await api.getAgents().catch(() => null));
+      if (catalog) {
+        setAgentsCatalog(catalog);
+        setStartProviderId((prev) => {
+          const enabled = catalog.providers.filter((p) => p.config?.enabled !== false);
+          if (enabled.some((p) => p.id === prev)) return prev;
+          return resolveStartProviderId(catalog, data.config.agent?.default);
+        });
+      }
       setNeedsToken(false);
       return data.config;
     } catch (e: unknown) {
@@ -107,12 +140,31 @@ const App: React.FC = () => {
       try {
         const data = await api.listSessions({ platform: platformFilter });
         setSessions(data.sessions);
+        setActiveId((prev) => {
+          if (prev && data.sessions.some((s) => s.id === prev)) return prev;
+          try {
+            const saved = sessionStorage.getItem(ACTIVE_SESSION_KEY);
+            if (saved && data.sessions.some((s) => s.id === saved)) return saved;
+          } catch {
+            /* ignore */
+          }
+          return prev;
+        });
       } catch {}
     };
     fetch();
     const iv = setInterval(fetch, 3000);
     return () => clearInterval(iv);
   }, [platformFilter]);
+
+  useEffect(() => {
+    try {
+      if (activeId) sessionStorage.setItem(ACTIVE_SESSION_KEY, activeId);
+      else sessionStorage.removeItem(ACTIVE_SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [activeId]);
 
   useEffect(() => {
     const fetchPlatforms = async () => {
@@ -246,6 +298,8 @@ const App: React.FC = () => {
     };
   }, [activeId]);
 
+  const activeSession = sessions.find((s) => s.id === activeId);
+
   const createSession = async () => {
     if (platformFilter !== 'webui') {
       showToast(t('sidebar.webui_only_create'), true);
@@ -306,13 +360,39 @@ const App: React.FC = () => {
 
     try {
       const data = await api.sendMessage(activeId, text, controller.signal);
-      if (data.response) {
+      if (data.status === 'stopped') {
+        const reply = data.response;
+        if (reply) {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'system' as const, content: stripAnsi(reply) },
+          ]);
+        }
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeId ? { ...s, active: false } : s))
+        );
+        setSending(false);
+      } else if (data.status === 'started') {
+        const reply = data.response;
+        if (reply) {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'system' as const, content: stripAnsi(reply) },
+          ]);
+        }
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeId ? { ...s, active: true } : s))
+        );
+        setSending(false);
+      } else if (data.response) {
         // Bug 4 fix: strip ANSI from POST response text
-        setMessages((prev) => [...prev, { role: 'system' as const, content: stripAnsi(data.response || '') }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'system' as const, content: stripAnsi(data.response || '') },
+        ]);
         setSending(false);
       }
-      // If status === 'forwarded', user message already appended above;
-      // assistant reply comes via SSE; keep sending true until then
+      // If status === 'forwarded', user message + assistant reply come via SSE; keep sending true.
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         // Request was intentionally aborted (session switch); do nothing
@@ -330,7 +410,30 @@ const App: React.FC = () => {
     }
   };
 
+  const enabledStartProviders: AgentCatalogEntry[] =
+    agentsCatalog?.providers.filter((p) => p.config?.enabled !== false) ?? [];
+
+  const handleStartProviderChange = useCallback((id: string) => {
+    setStartProviderId(id);
+    saveLastStartProvider(id);
+  }, []);
+
   const startSession = async () => {
+    if (!activeId || starting || enabledStartProviders.length === 0) return;
+    const provider = startProviderId || resolveStartProviderId(agentsCatalog, config?.agent?.default);
+    saveLastStartProvider(provider);
+    setStarting(true);
+    try {
+      const data = await api.startSession(activeId, provider);
+      setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, ...data.session, active: true } : s)));
+    } catch (e: unknown) {
+      showToast(errMsg(e, t('app.failed_start')), true);
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const resumeSession = async () => {
     if (!activeId || starting) return;
     setStarting(true);
     try {
@@ -433,7 +536,6 @@ const App: React.FC = () => {
     }
   };
 
-  const activeSession = sessions.find((s) => s.id === activeId);
   // Only WebUI sessions are operable in WebUI; all others are read-only regardless of state.
   const readOnly = activeSession ? activeSession.source !== 'WebUI' || !activeSession.active : true;
 
@@ -509,7 +611,11 @@ const App: React.FC = () => {
         locale={locale}
         onInputChange={setInput}
         onSend={sendMessage}
-        onStart={startSession}
+        onStartSession={startSession}
+        onResumeSession={resumeSession}
+        startProviders={enabledStartProviders}
+        startProviderId={startProviderId}
+        onStartProviderChange={handleStartProviderChange}
         onStop={stopSession}
         onOpenDir={openDirModal}
         onLocaleChange={setLocale}

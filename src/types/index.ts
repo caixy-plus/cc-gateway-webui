@@ -9,6 +9,8 @@ export interface Session {
   provider?: string;
   provider_session_id?: string | null;
   created_at: string;
+  /** Set when the agent was stopped via WebUI or platform /quit */
+  stopped_at?: string | null;
 }
 
 export interface Message {
@@ -117,11 +119,10 @@ export interface PlatformInfo {
 export type ThemeMode = 'auto' | 'dark' | 'light';
 
 /** Session list filter — fixed platform ids from the gateway. */
-export type PlatformFilter = 'webui' | 'feishu' | 'telegram' | 'qq' | 'tui';
+export type PlatformFilter = 'webui' | 'feishu' | 'telegram' | 'qq';
 
 export const PLATFORM_FILTERS: PlatformFilter[] = [
   'webui',
-  'tui',
   'feishu',
   'telegram',
   'qq',

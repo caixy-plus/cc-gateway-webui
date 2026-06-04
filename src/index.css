@@ -1145,28 +1145,11 @@ html, body {
   z-index: 50;
 }
 
-.cmd-palette-header {
+.cmd-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-family: var(--font-mono);
-}
-
-.cmd-palette-header .cmd-pill {
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  color: var(--text-muted);
-}
-
-.cmd-item {
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 6px 10px;
   cursor: pointer;
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -1178,33 +1161,20 @@ html, body {
   background: rgba(212, 176, 110, 0.10);
 }
 
-.cmd-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .cmd-code {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--accent);
   background: rgba(212, 176, 110, 0.08);
   border: 1px solid rgba(212, 176, 110, 0.22);
-  border-radius: 8px;
-  padding: 2px 8px;
+  border-radius: 6px;
+  padding: 1px 6px;
+  flex-shrink: 0;
 }
 
 .cmd-title {
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.cmd-desc {
-  margin-top: 6px;
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
 }
 
 .input-area .input-wrapper::before {
@@ -1293,6 +1263,61 @@ html, body {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
+}
+
+.start-session-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.start-session-controls.restart {
+  margin-top: 0;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.session-provider-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.start-provider-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.start-provider-select {
+  min-width: 140px;
+  max-width: min(220px, 100%);
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.start-provider-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.restart-area .start-session-controls {
+  width: 100%;
 }
 
 .restart-btn {
@@ -2403,6 +2428,20 @@ html, body {
 
   .empty-state .restart-btn {
     width: auto;
+  }
+
+  .start-session-controls.empty {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .start-session-controls.empty .restart-btn {
+    width: 100%;
+  }
+
+  .start-provider-select {
+    width: 100%;
+    max-width: none;
   }
 
   /* --- Modals full width --- */

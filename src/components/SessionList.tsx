@@ -36,7 +36,6 @@ function platformIcon(platform: string): string {
     case 'feishu': return '📱';
     case 'telegram': return '✈️';
     case 'qq': return '🐧';
-    case 'tui': return '⌨️';
     default: return '🔌';
   }
 }
