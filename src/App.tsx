@@ -11,6 +11,7 @@ import { api, createEventSource, ApiError } from '@/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
+import { appendMessage, historyRoleForDisplay } from '@/utils/chatMessages';
 import { joinDir } from '@/utils/path';
 import type {
   Session,
@@ -249,7 +250,10 @@ const App: React.FC = () => {
                 requestId: nl > 0 ? h.content.slice(0, nl) : '',
               };
             }
-            return { role: h.role as Message['role'], content: stripAnsi(h.content) };
+            return {
+              role: historyRoleForDisplay(h.role),
+              content: stripAnsi(h.content),
+            };
           }));
         } else {
           setMessages([]);
@@ -272,15 +276,23 @@ const App: React.FC = () => {
             const nl = data.content.indexOf('\n');
             const requestId = nl > 0 ? data.content.slice(0, nl) : '';
             const body = nl > 0 ? data.content.slice(nl + 1) : data.content;
-            setMessages((prev) => [...prev, {
-              role: 'permission_request' as const,
-              content: stripAnsi(body),
-              requestId,
-            }]);
+            setMessages((prev) =>
+              appendMessage(prev, {
+                role: 'permission_request',
+                content: stripAnsi(body),
+                requestId,
+              }),
+            );
             setSending(false);
           } else {
-            setMessages((prev) => [...prev, { role: data.role as Message['role'], content: stripAnsi(data.content) }]);
-            if (data.role !== 'user') {
+            const role =
+              data.role === 'system'
+                ? 'assistant'
+                : (data.role as Message['role']);
+            setMessages((prev) =>
+              appendMessage(prev, { role, content: stripAnsi(data.content) }),
+            );
+            if (role !== 'user') {
               setSending(false);
             }
           }
@@ -353,6 +365,7 @@ const App: React.FC = () => {
     const text = input.trim();
     setInput('');
     setSending(true);
+    setMessages((prev) => appendMessage(prev, { role: 'user', content: text }));
 
     // Use AbortController to cancel in-flight POST when session switches
     const controller = new AbortController();
@@ -361,46 +374,30 @@ const App: React.FC = () => {
     try {
       const data = await api.sendMessage(activeId, text, controller.signal);
       if (data.status === 'stopped') {
-        const reply = data.response;
-        if (reply) {
-          setMessages((prev) => [
-            ...prev,
-            { role: 'system' as const, content: stripAnsi(reply) },
-          ]);
-        }
         setSessions((prev) =>
           prev.map((s) => (s.id === activeId ? { ...s, active: false } : s))
         );
         setSending(false);
       } else if (data.status === 'started') {
-        const reply = data.response;
-        if (reply) {
-          setMessages((prev) => [
-            ...prev,
-            { role: 'system' as const, content: stripAnsi(reply) },
-          ]);
-        }
         setSessions((prev) =>
           prev.map((s) => (s.id === activeId ? { ...s, active: true } : s))
         );
         setSending(false);
       } else if (data.response) {
-        // Bug 4 fix: strip ANSI from POST response text
-        setMessages((prev) => [
-          ...prev,
-          { role: 'system' as const, content: stripAnsi(data.response || '') },
-        ]);
+        // Slash/gateway replies are delivered via SSE as assistant bubbles.
         setSending(false);
       }
-      // If status === 'forwarded', user message + assistant reply come via SSE; keep sending true.
+      // If status === 'forwarded', assistant reply comes via SSE; keep sending true until then.
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         // Request was intentionally aborted (session switch); do nothing
       } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'system' as const, content: stripAnsi(errMsg(err, t('app.failed_send'))) },
-        ]);
+        setMessages((prev) =>
+          appendMessage(prev, {
+            role: 'assistant',
+            content: stripAnsi(errMsg(err, t('app.failed_send'))),
+          }),
+        );
         setSending(false);
       }
     } finally {
