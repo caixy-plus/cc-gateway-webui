@@ -4,7 +4,8 @@ const API_BASE = '';
 
 const TOKEN_KEY = 'cc_gateway_token';
 
-function getToken(): string | null {
+/** Token for API and authenticated media URLs (`<img src>` cannot send Bearer). */
+export function getApiToken(): string | null {
   const fromSession = sessionStorage.getItem(TOKEN_KEY);
   if (fromSession) return fromSession;
 
@@ -49,7 +50,7 @@ export function setToken(token: string) {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const token = getToken();
+  const token = getApiToken();
   if (token) {
     return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
   }
@@ -153,6 +154,39 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ title, work_dir: workDir }),
     }),
+
+  uploadSessionFile: async (
+    sessionId: string,
+    file: File,
+    caption?: string,
+  ): Promise<{ status?: string; media?: string; name?: string; size?: number; forwarded?: boolean; error?: string }> => {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    if (caption?.trim()) {
+      fd.append('caption', caption.trim());
+    }
+    const headers: Record<string, string> = {};
+    const token = getApiToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_BASE}/api/sessions/${encodeURIComponent(sessionId)}/upload`, {
+      method: 'POST',
+      headers,
+      body: fd,
+    });
+    const text = await res.text();
+    let data: { status?: string; media?: string; name?: string; size?: number; forwarded?: boolean; error?: string; error_key?: string } = {};
+    try {
+      data = JSON.parse(text) as typeof data;
+    } catch {
+      data = { error: text || res.statusText };
+    }
+    if (!res.ok) {
+      throw new ApiError(data.error || res.statusText, res.status, data.error_key);
+    }
+    return data;
+  },
 
   sendMessage: (sessionId: string, message: string, signal?: AbortSignal) =>
     fetchJSON<{ response?: string; status?: string; error?: string }>(
@@ -291,7 +325,7 @@ export const api = {
 };
 
 export function createEventSource(sessionId: string): EventSource {
-  const token = getToken();
+  const token = getApiToken();
   const url = token
     ? `${API_BASE}/api/sessions/${sessionId}/events?token=${encodeURIComponent(token)}`
     : `${API_BASE}/api/sessions/${sessionId}/events`;

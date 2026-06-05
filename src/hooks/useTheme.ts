@@ -7,18 +7,29 @@ function getSystemTheme(): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function resolveTheme(mode: ThemeMode): 'dark' | 'light' {
+  return mode === 'auto' ? getSystemTheme() : mode;
+}
+
+function applyThemeToDocument(resolved: 'dark' | 'light') {
+  document.documentElement.setAttribute('data-theme', resolved);
+  document.documentElement.classList.toggle('dark', resolved === 'dark');
+}
+
 export function useTheme() {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     try {
-      return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'auto';
+      const mode = (localStorage.getItem(STORAGE_KEY) as ThemeMode) || 'auto';
+      applyThemeToDocument(resolveTheme(mode));
+      return mode;
     } catch {
+      applyThemeToDocument(getSystemTheme());
       return 'auto';
     }
   });
 
   const applyTheme = useCallback((mode: ThemeMode) => {
-    const resolved = mode === 'auto' ? getSystemTheme() : mode;
-    document.documentElement.setAttribute('data-theme', resolved);
+    applyThemeToDocument(resolveTheme(mode));
   }, []);
 
   const setTheme = useCallback(

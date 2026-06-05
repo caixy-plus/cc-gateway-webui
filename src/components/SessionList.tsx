@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { useI18n } from '@/i18n';
+import { useI18n, type TranslationKey } from '@/i18n';
 import { api } from '@/api/client';
 import {
-  PLATFORM_FILTERS,
   type PlatformFilter,
   type Session,
   type PlatformInfo,
@@ -28,6 +27,20 @@ function stripMarkdown(text: string): string {
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
     .replace(/`(.+?)`/g, '$1');
+}
+
+const KNOWN_PLATFORM_FILTER_KEYS = new Set(['webui', 'feishu', 'telegram', 'qq']);
+
+function platformFilterTitle(
+  p: PlatformFilter,
+  platforms: PlatformInfo[],
+  t: (key: TranslationKey) => string,
+): string {
+  if (KNOWN_PLATFORM_FILTER_KEYS.has(p)) {
+    return t(`sidebar.platform.${p}` as TranslationKey);
+  }
+  const entry = platforms.find((x) => (x.id ?? x.name) === p);
+  return entry?.display_name ?? p;
 }
 
 function platformIcon(platform: string): string {
@@ -161,9 +174,16 @@ export const SessionList: React.FC<Props> = ({
     setUpdateDialog((prev) => ({ ...prev, open: false }));
   };
 
-  const filterOptions = useMemo(() => {
-    return PLATFORM_FILTERS;
-  }, []);
+  /** Only platforms enabled in config (daemon actually starts these). */
+  const enabledPlatforms = useMemo(
+    () => platforms.filter((p) => p.enabled),
+    [platforms],
+  );
+
+  const filterOptions = useMemo((): PlatformFilter[] => {
+    const ids = enabledPlatforms.map((p) => (p.id ?? p.name) as PlatformFilter);
+    return ['webui', ...ids];
+  }, [enabledPlatforms]);
 
   return (
     <div className={`sidebar${mobileMenuOpen ? ' mobile-open' : ''}`}>
@@ -323,20 +343,22 @@ export const SessionList: React.FC<Props> = ({
             type="button"
             className={`platform-filter-btn ${platformFilter === p ? 'active' : ''}`}
             onClick={() => onPlatformFilterChange(p)}
-            title={t(`sidebar.platform.${p}`)}
-            aria-label={t(`sidebar.platform.${p}`)}
+            title={platformFilterTitle(p, platforms, t)}
+            aria-label={platformFilterTitle(p, platforms, t)}
           >
             {platformIcon(p)}
           </button>
         ))}
       </div>
 
-      {platforms.length > 0 && (
+      {enabledPlatforms.length > 0 && (
         <div className="platforms-section">
           <div className="section-label">{t('sidebar.connected_platforms')}</div>
-          {platforms.map((p) => (
+          {enabledPlatforms.map((p) => (
             <div key={p.name} className="platform-row">
-              <span className="platform-row-name">{platformIcon(p.name)} {p.name}</span>
+              <span className="platform-row-name">
+                {platformIcon(p.id ?? p.name)} {p.display_name ?? p.name}
+              </span>
               <div className="platform-row-right">
                 <span className={`platform-status ${p.state}`}>
                   {p.state === 'connected' ? t('sidebar.connected') : p.state === 'connecting' ? t('sidebar.connecting') : t('sidebar.disconnected')}

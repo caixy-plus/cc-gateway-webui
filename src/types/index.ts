@@ -65,26 +65,7 @@ export interface GatewayConfig {
     max_size_mb: number;
   };
   agent: AgentSection;
-  feishu: {
-    enabled: boolean;
-    app_id: string;
-    app_secret: string;
-    require_pairing: boolean;
-  };
-  telegram: {
-    enabled: boolean;
-    bot_token: string;
-    /** HTTP/SOCKS proxy for Telegram Bot API only; empty = direct connection */
-    proxy: string;
-    require_pairing: boolean;
-  };
-  qq: {
-    enabled: boolean;
-    app_id: string;
-    app_secret: string;
-    sandbox: boolean;
-    require_pairing: boolean;
-  };
+  platforms: PlatformsMap;
   default_dir: string;
   show_thinking: boolean;
   media_retention_days: number;
@@ -109,24 +90,58 @@ export interface ApprovedChat {
   enabled: boolean;
 }
 
+export interface PlatformFieldSchema {
+  key: string;
+  kind: 'bool' | 'text' | 'secret';
+  label_key: string;
+  hint_key?: string | null;
+}
+
 export interface PlatformInfo {
   name: string;
+  id?: string;
+  display_name?: string;
   enabled: boolean;
   state: string;
   require_pairing?: boolean;
+  transport?: string;
+  capabilities?: Record<string, boolean>;
+  fields?: PlatformFieldSchema[];
+  config?: Record<string, unknown>;
+}
+
+export interface FeishuPlatformConfig {
+  enabled: boolean;
+  app_id: string;
+  app_secret: string;
+  require_pairing: boolean;
+}
+
+export interface TelegramPlatformConfig {
+  enabled: boolean;
+  bot_token: string;
+  proxy: string;
+  require_pairing: boolean;
+}
+
+export interface QqPlatformConfig {
+  enabled: boolean;
+  app_id: string;
+  app_secret: string;
+  sandbox: boolean;
+  require_pairing: boolean;
+}
+
+export interface PlatformsMap {
+  feishu: FeishuPlatformConfig;
+  telegram: TelegramPlatformConfig;
+  qq: QqPlatformConfig;
 }
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
 
-/** Session list filter — fixed platform ids from the gateway. */
-export type PlatformFilter = 'webui' | 'feishu' | 'telegram' | 'qq';
-
-export const PLATFORM_FILTERS: PlatformFilter[] = [
-  'webui',
-  'feishu',
-  'telegram',
-  'qq',
-];
+/** Session list filter: WebUI tab plus integrated platform ids from `GET /api/platforms`. */
+export type PlatformFilter = 'webui' | string;
 
 /** Which config fields need a daemon restart vs apply live (from GET /api/config). */
 export interface ConfigRestartPolicy {

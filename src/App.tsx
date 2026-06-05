@@ -12,7 +12,9 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
 import { appendMessage, historyRoleForDisplay } from '@/utils/chatMessages';
+import type { FileAttachment } from '@/utils/fileAttachment';
 import { joinDir } from '@/utils/path';
+import { normalizeGatewayConfig } from '@/utils/normalizeConfig';
 import type {
   Session,
   Message,
@@ -57,6 +59,7 @@ const App: React.FC = () => {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('webui');
   const [restarting, setRestarting] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -108,7 +111,8 @@ const App: React.FC = () => {
   const loadConfig = useCallback(async () => {
     try {
       const data = await api.getConfig();
-      setConfig(data.config);
+      const normalized = normalizeGatewayConfig(data.config);
+      setConfig(normalized);
       const catalog =
         data.agents ??
         (await api.getAgents().catch(() => null));
@@ -121,7 +125,7 @@ const App: React.FC = () => {
         });
       }
       setNeedsToken(false);
-      return data.config;
+      return normalized;
     } catch (e: unknown) {
       if (e instanceof ApiError && e.status === 401) {
         setNeedsToken(true);
@@ -178,6 +182,16 @@ const App: React.FC = () => {
     const iv = setInterval(fetchPlatforms, 10000);
     return () => clearInterval(iv);
   }, []);
+
+  useEffect(() => {
+    if (platformFilter === 'webui') return;
+    const stillEnabled = platforms.some(
+      (p) => p.enabled && (p.id ?? p.name) === platformFilter,
+    );
+    if (!stillEnabled) {
+      setPlatformFilter('webui');
+    }
+  }, [platforms, platformFilter]);
 
   const toggleRequirePairing = useCallback(async (platform: string, value: boolean) => {
     // Optimistic update; revert on failure.
@@ -357,6 +371,101 @@ const App: React.FC = () => {
       showToast(errMsg(e, t('app.failed_delete_session')), true);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const analyzeAttachment = async (attachment: FileAttachment) => {
+    if (!activeId || sending || !activeSession?.active) return;
+    const path = attachment.local_path?.trim();
+    const text = path
+      ? `${t('chat.analyze_file_prompt', { name: attachment.name })}\n${path}`
+      : t('chat.analyze_file_prompt', { name: attachment.name });
+    setInput('');
+    setSending(true);
+    setMessages((prev) => appendMessage(prev, { role: 'user', content: text }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const data = await api.sendMessage(activeId, text, controller.signal);
+      if (data.status === 'stopped') {
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeId ? { ...s, active: false } : s)),
+        );
+        setSending(false);
+      } else if (data.response) {
+        setSending(false);
+      }
+    } catch (err: unknown) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        showToast(errMsg(err, t('app.failed_send')), true);
+        setSending(false);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!activeId || uploading || sending) return;
+    const caption = input.trim();
+    setUploading(true);
+    try {
+      const data = await api.uploadSessionFile(activeId, file, caption || undefined);
+      if (caption) {
+        setInput('');
+      }
+      if (data.forwarded) {
+        setSending(true);
+      } else if (activeSession?.source === 'WebUI') {
+        showToast(t('chat.upload_not_forwarded'), false);
+      }
+    } catch (err: unknown) {
+      showToast(errMsg(err, t('chat.upload_failed')), true);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const selectModel = async (modelId: string) => {
+    if (
+      !activeId ||
+      sending ||
+      !activeSession ||
+      activeSession.source !== 'WebUI' ||
+      !activeSession.active
+    ) {
+      return;
+    }
+    const text = `/models ${modelId}`;
+    setSending(true);
+    setMessages((prev) => appendMessage(prev, { role: 'user', content: text }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const data = await api.sendMessage(activeId, text, controller.signal);
+      if (data.status === 'stopped') {
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeId ? { ...s, active: false } : s)),
+        );
+        setSending(false);
+      } else if (data.response) {
+        setSending(false);
+      }
+    } catch (err: unknown) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        showToast(errMsg(err, t('chat.model_switch_failed')), true);
+        setSending(false);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
     }
   };
 
@@ -608,6 +717,14 @@ const App: React.FC = () => {
         locale={locale}
         onInputChange={setInput}
         onSend={sendMessage}
+        onSelectModel={
+          activeSession?.source === 'WebUI' && activeSession.active ? selectModel : undefined
+        }
+        onAnalyzeAttachment={
+          activeSession?.source === 'WebUI' && activeSession.active ? analyzeAttachment : undefined
+        }
+        onUploadFile={activeSession?.source === 'WebUI' ? uploadFile : undefined}
+        uploading={uploading}
         onStartSession={startSession}
         onResumeSession={resumeSession}
         startProviders={enabledStartProviders}
