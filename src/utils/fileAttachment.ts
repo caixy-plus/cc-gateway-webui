@@ -9,6 +9,8 @@ export type FileAttachment = {
   size: number;
   /** Set by gateway when saving; falls back to extension heuristics. */
   is_image?: boolean;
+  /** Absolute path on the gateway host (for re-prompting the agent). */
+  local_path?: string;
 };
 
 const IMAGE_EXTENSIONS = new Set([

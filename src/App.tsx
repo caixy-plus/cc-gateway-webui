@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/i18n';
 import { stripAnsi } from '@/utils/ansi';
 import { appendMessage, historyRoleForDisplay } from '@/utils/chatMessages';
+import type { FileAttachment } from '@/utils/fileAttachment';
 import { joinDir } from '@/utils/path';
 import { normalizeGatewayConfig } from '@/utils/normalizeConfig';
 import type {
@@ -373,6 +374,41 @@ const App: React.FC = () => {
     }
   };
 
+  const analyzeAttachment = async (attachment: FileAttachment) => {
+    if (!activeId || sending || !activeSession?.active) return;
+    const path = attachment.local_path?.trim();
+    const text = path
+      ? `${t('chat.analyze_file_prompt', { name: attachment.name })}\n${path}`
+      : t('chat.analyze_file_prompt', { name: attachment.name });
+    setInput('');
+    setSending(true);
+    setMessages((prev) => appendMessage(prev, { role: 'user', content: text }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const data = await api.sendMessage(activeId, text, controller.signal);
+      if (data.status === 'stopped') {
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeId ? { ...s, active: false } : s)),
+        );
+        setSending(false);
+      } else if (data.response) {
+        setSending(false);
+      }
+    } catch (err: unknown) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        showToast(errMsg(err, t('app.failed_send')), true);
+        setSending(false);
+      }
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+    }
+  };
+
   const uploadFile = async (file: File) => {
     if (!activeId || uploading || sending) return;
     const caption = input.trim();
@@ -382,7 +418,9 @@ const App: React.FC = () => {
       if (caption) {
         setInput('');
       }
-      if (!data.forwarded && activeSession?.source === 'WebUI') {
+      if (data.forwarded) {
+        setSending(true);
+      } else if (activeSession?.source === 'WebUI') {
         showToast(t('chat.upload_not_forwarded'), false);
       }
     } catch (err: unknown) {
@@ -681,6 +719,9 @@ const App: React.FC = () => {
         onSend={sendMessage}
         onSelectModel={
           activeSession?.source === 'WebUI' && activeSession.active ? selectModel : undefined
+        }
+        onAnalyzeAttachment={
+          activeSession?.source === 'WebUI' && activeSession.active ? analyzeAttachment : undefined
         }
         onUploadFile={activeSession?.source === 'WebUI' ? uploadFile : undefined}
         uploading={uploading}

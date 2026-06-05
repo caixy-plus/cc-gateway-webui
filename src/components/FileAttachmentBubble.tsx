@@ -6,9 +6,16 @@ import { formatFileSize, isImageAttachment, mediaUrl } from '@/utils/fileAttachm
 interface Props {
   attachment: FileAttachment;
   caption?: string;
+  onAnalyze?: (attachment: FileAttachment) => void;
+  analyzeDisabled?: boolean;
 }
 
-export const FileAttachmentBubble: React.FC<Props> = ({ attachment, caption }) => {
+export const FileAttachmentBubble: React.FC<Props> = ({
+  attachment,
+  caption,
+  onAnalyze,
+  analyzeDisabled,
+}) => {
   const { t } = useI18n();
   const url = mediaUrl(attachment.media);
   const isImage = isImageAttachment(attachment);
@@ -42,7 +49,20 @@ export const FileAttachmentBubble: React.FC<Props> = ({ attachment, caption }) =
         <span className="file-attachment-name">{attachment.name}</span>
         <span className="file-attachment-size">{formatFileSize(attachment.size)}</span>
       </a>
-      <div className="file-attachment-meta">{t('chat.file_download_hint')}</div>
+      <div className="file-attachment-actions">
+        {onAnalyze && !isImage ? (
+          <button
+            type="button"
+            className="file-attachment-analyze-btn"
+            disabled={analyzeDisabled}
+            onClick={() => onAnalyze(attachment)}
+            data-testid="analyze-file-btn"
+          >
+            {t('chat.analyze_file')}
+          </button>
+        ) : null}
+        <span className="file-attachment-meta">{t('chat.file_download_hint')}</span>
+      </div>
     </div>
   );
 };

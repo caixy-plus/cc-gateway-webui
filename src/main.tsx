@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { I18nProvider } from '@/i18n'
 import App from './App'
+import 'streamdown/styles.css'
 import './index.css'
 
 // Capture WebUI token from URL query param and persist across sessions.

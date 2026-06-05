@@ -3,9 +3,12 @@ import { useI18n, type Locale } from '@/i18n';
 import type { Session, Message, AgentCatalogEntry } from '@/types';
 import { api } from '@/api/client';
 import { FileAttachmentBubble } from '@/components/FileAttachmentBubble';
+import { MessageBody } from '@/components/MessageBody';
+import { MessageCopyFooter } from '@/components/MessageCopyFooter';
 import { ModelPickerBubble } from '@/components/ModelPickerBubble';
 import { StartSessionControls } from '@/components/StartSessionControls';
-import { parseFileAttachment } from '@/utils/fileAttachment';
+import { filesFromClipboard } from '@/utils/clipboardFiles';
+import { parseFileAttachment, type FileAttachment } from '@/utils/fileAttachment';
 import { parseModelPicker } from '@/utils/modelPicker';
 import { wasWebuiSessionStarted } from '@/utils/webuiSession';
 
@@ -28,7 +31,8 @@ interface Props {
   onInputChange: (v: string) => void;
   onSend: () => void;
   onSelectModel?: (modelId: string) => void;
-  onUploadFile?: (file: File) => void;
+  onAnalyzeAttachment?: (attachment: FileAttachment) => void;
+  onUploadFile?: (file: File) => void | Promise<void>;
   uploading?: boolean;
   /** First start — user picks provider in empty state */
   onStartSession: () => void;
@@ -55,6 +59,7 @@ export const ChatArea: React.FC<Props> = ({
   onInputChange,
   onSend,
   onSelectModel,
+  onAnalyzeAttachment,
   onUploadFile,
   uploading = false,
   onStartSession,
@@ -198,8 +203,13 @@ export const ChatArea: React.FC<Props> = ({
         {messages.map((m, i) => {
           const attachment = parseFileAttachment(m.content);
           const modelPicker = parseModelPicker(m.content);
+          const showMessageCopy =
+            m.role === 'assistant' && !attachment && !(modelPicker && onSelectModel);
           return (
-          <div key={i} className={`message ${m.role}`}>
+          <div
+            key={i}
+            className={`message ${m.role}${showMessageCopy ? ' message--copyable' : ''}`}
+          >
             {modelPicker && onSelectModel ? (
               <ModelPickerBubble
                 picker={modelPicker}
@@ -207,10 +217,22 @@ export const ChatArea: React.FC<Props> = ({
                 onSelect={onSelectModel}
               />
             ) : attachment ? (
-              <FileAttachmentBubble attachment={attachment} />
+              <FileAttachmentBubble
+                attachment={attachment}
+                onAnalyze={onAnalyzeAttachment}
+                analyzeDisabled={readOnly || sending || uploading}
+              />
             ) : (
-              m.content
+              <MessageBody
+                content={m.content}
+                isAnimating={
+                  sending &&
+                  m.role === 'assistant' &&
+                  i === messages.length - 1
+                }
+              />
             )}
+            {showMessageCopy ? <MessageCopyFooter content={m.content} /> : null}
             {m.role === 'permission_request' && m.requestId && (
               <PermissionActions
                 sessionId={session?.id || ''}
@@ -288,6 +310,21 @@ export const ChatArea: React.FC<Props> = ({
                 onChange={(e) => onInputChange(e.target.value)}
                 onCompositionStart={() => setIsComposing(true)}
                 onCompositionEnd={() => setIsComposing(false)}
+                onPaste={(e) => {
+                  if (!onUploadFile || readOnly || uploading || sending || !session) {
+                    return;
+                  }
+                  const files = filesFromClipboard(e.clipboardData);
+                  if (files.length === 0) {
+                    return;
+                  }
+                  e.preventDefault();
+                  void (async () => {
+                    for (const file of files) {
+                      await onUploadFile(file);
+                    }
+                  })();
+                }}
                 onKeyDown={(e) => {
                   const native = e.nativeEvent as unknown as { isComposing?: boolean; keyCode?: number };
                   const composing = isComposing || native.isComposing || native.keyCode === 229;
@@ -325,14 +362,17 @@ export const ChatArea: React.FC<Props> = ({
 
                   if (e.key === 'Enter' && !e.shiftKey) onSend();
                 }}
+                title={onUploadFile && !readOnly ? t('chat.paste_file_hint') : undefined}
                 placeholder={
                   readOnly
                     ? t('chat.readonly_placeholder')
                     : sending
                     ? t('chat.sending_placeholder')
+                    : onUploadFile
+                    ? t('chat.input_placeholder_paste')
                     : t('chat.input_placeholder')
                 }
-                disabled={readOnly || sending || !session}
+                disabled={readOnly || sending || uploading || !session}
               />
 
               {cmdOpen && paletteMatches.length > 0 && (
