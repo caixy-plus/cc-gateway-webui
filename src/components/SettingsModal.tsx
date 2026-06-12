@@ -6,28 +6,21 @@ import { PlatformSettingsSection } from '@/components/PlatformSettingsSection';
 import type { AgentCatalogEntry, GatewayConfig, PlatformInfo, SaveConfigResult } from '@/types';
 import { normalizeGatewayConfig } from '@/utils/normalizeConfig';
 
-/** Per-provider CLI flags users can click to fill default_args (replaces input). */
-const AGENT_ARG_QUICK_LINKS: Record<string, readonly string[]> = {
-  claude: ['--dangerously-skip-permissions', '--yolo'],
-  cursor: ['--yolo'],
-  opencode: ['--yolo'],
-  pi: ['--yolo'],
-};
-
 // ---- helper: single provider config row ----
 
 interface ProviderConfigRowProps {
   label: string;
   provider: string;
+  /** Quick-select default_args chips from `GET /api/agents` (server-driven). */
+  quickLinks: readonly string[];
   form: GatewayConfig;
   update: (path: string, value: unknown) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }
 
-const ProviderConfigRow: React.FC<ProviderConfigRowProps> = ({ label, provider, form, update, t }) => {
+const ProviderConfigRow: React.FC<ProviderConfigRowProps> = ({ label, provider, quickLinks, form, update, t }) => {
   const cfg = (form.agent as unknown as Record<string, Record<string, unknown>>)[provider];
   const defaultArgs = (cfg?.default_args as string) || '';
-  const quickLinks = AGENT_ARG_QUICK_LINKS[provider] ?? [];
 
   return (
     <div className="agent-provider-row">
@@ -341,6 +334,7 @@ export const SettingsModal: React.FC<Props> = ({ config, onClose, onSave, onRest
                 key={p.id}
                 label={p.display_name}
                 provider={p.id}
+                quickLinks={p.default_args_suggestions ?? []}
                 form={form}
                 update={update}
                 t={t}

@@ -44,6 +44,8 @@ export interface AgentCatalogEntry {
   display_name: string;
   cli_binary: string;
   aliases: string[];
+  /** CLI flags offered as quick-select chips for default_args (server-driven). */
+  default_args_suggestions?: string[];
   config: AgentProviderConfig;
 }
 
