@@ -84,7 +84,6 @@ export const ChatArea: React.FC<Props> = ({
   const slashCommands: SlashCommandDef[] = [
     { id: 'quit',         command: '/quit',          titleKey: 'cmd.quit',          descKey: 'cmd.quit_desc' },
     { id: 'stop',         command: '/stop',          titleKey: 'cmd.stop',          descKey: 'cmd.stop_desc' },
-    { id: 'esc',          command: '/esc',           titleKey: 'cmd.esc',           descKey: 'cmd.esc_desc' },
     { id: 'clear',        command: '/clear',         titleKey: 'cmd.clear',         descKey: 'cmd.clear_desc' },
     { id: 'models',       command: '/models',        titleKey: 'cmd.models',        descKey: 'cmd.models_desc' },
     { id: 'status',       command: '/status',        titleKey: 'cmd.status',        descKey: 'cmd.status_desc' },

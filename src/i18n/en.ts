@@ -97,8 +97,6 @@ export const en = {
   'cmd.pwd_desc': 'Show current working directory',
   'cmd.mkdir': 'Create directory',
   'cmd.mkdir_desc': 'Create a directory under current working directory',
-  'cmd.esc': 'Flush queue',
-  'cmd.esc_desc': 'Flush queued messages (Claude best-effort)',
   'cmd.stop': 'Stop generation',
   'cmd.stop_desc': 'Stop current generation (Claude best-effort)',
   'cmd.clear': 'Clear context',

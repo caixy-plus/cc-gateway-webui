@@ -99,8 +99,6 @@ export const zh: Record<TranslationKey, string> = {
   'cmd.pwd_desc': '显示当前工作目录',
   'cmd.mkdir': '创建目录',
   'cmd.mkdir_desc': '在当前目录下创建文件夹',
-  'cmd.esc': '强推队列',
-  'cmd.esc_desc': '强推排队消息（Claude best-effort）',
   'cmd.stop': '停止输出',
   'cmd.stop_desc': '停止当前输出（Claude best-effort）',
   'cmd.clear': '清理上下文',
