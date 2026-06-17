@@ -60,6 +60,7 @@ const App: React.FC = () => {
   const [restarting, setRestarting] = useState(false);
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [creatingDir, setCreatingDir] = useState(false);
   const [restartConfirm, setRestartConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -216,16 +217,32 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchVersion = async () => {
+    let cancelled = false;
+    // Retry a few times before giving up: a transient first-load hiccup (or a
+    // stale/garbled cached response) shouldn't permanently leave the footer at
+    // `vunknown`.
+    const fetchVersion = async (attempt = 0) => {
       try {
         const data = await api.getVersion();
-        if (data.version) setVersion(data.version);
-        else setVersion('unknown');
+        if (cancelled) return;
+        if (data.version) {
+          setVersion(data.version);
+          return;
+        }
+        throw new Error('empty version');
       } catch {
-        setVersion('unknown');
+        if (cancelled) return;
+        if (attempt < 3) {
+          setTimeout(() => fetchVersion(attempt + 1), 1000 * (attempt + 1));
+        } else {
+          setVersion('unknown');
+        }
       }
     };
     fetchVersion();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -615,6 +632,23 @@ const App: React.FC = () => {
     setShowHidden((prev) => !prev);
   };
 
+  const createProjectDir = async (name: string) => {
+    if (creatingDir) return;
+    setCreatingDir(true);
+    try {
+      const created = await api.createDir(currentDir, name, activeId);
+      const nextDir = created.dir || joinDir(currentDir, name);
+      const dirData = await api.listDir(nextDir, activeId, showHidden);
+      setDirItems(dirData.items || []);
+      setCurrentDir(dirData.dir || nextDir);
+      setDirError('');
+    } catch (e: unknown) {
+      setDirError(errMsg(e, t('app.failed_create_dir')));
+    } finally {
+      setCreatingDir(false);
+    }
+  };
+
   const selectDir = async (dir: string) => {
     try {
       await api.changeDir(dir, activeId);
@@ -745,8 +779,10 @@ const App: React.FC = () => {
           onClose={() => setShowDir(false)}
           onEnter={enterDir}
           onGoUp={goUpDir}
+          onCreate={createProjectDir}
           onSelect={selectDir}
           onToggleHidden={toggleHidden}
+          creating={creatingDir}
         />
       )}
       {showSettings && (

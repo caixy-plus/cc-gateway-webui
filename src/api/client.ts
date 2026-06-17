@@ -235,6 +235,12 @@ export const api = {
       body: JSON.stringify({ path, session_id: sessionId }),
     }),
 
+  createDir: (path: string, name: string, sessionId?: string | null) =>
+    fetchJSON<{ dir?: string; error?: string }>('/api/cmd/mkdir', {
+      method: 'POST',
+      body: JSON.stringify({ path, name, session_id: sessionId }),
+    }),
+
   pwd: (sessionId?: string | null) =>
     fetchJSON<{ dir?: string; error?: string }>('/api/cmd/pwd', {
       method: 'POST',

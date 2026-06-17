@@ -9,6 +9,7 @@ export const en = {
   'app.failed_start': 'Failed to start',
   'app.failed_stop': 'Failed to stop session',
   'app.failed_list_dir': 'Failed to list directory',
+  'app.failed_create_dir': 'Failed to create directory',
   'app.dir_set_to': 'Directory set to: {dir}',
   'app.failed_set_dir': 'Failed to set directory',
   'app.config_saved': 'Config saved',
@@ -170,6 +171,9 @@ export const en = {
   'dir.items': '{count} items',
   'dir.select': 'Select Directory',
   'dir.show_hidden': 'Show hidden',
+  'dir.create_project': 'Create',
+  'dir.creating': 'Creating...',
+  'dir.new_project_placeholder': 'New project folder',
 
   // SettingsModal
   'settings.title': 'Settings',
@@ -270,6 +274,7 @@ export const en = {
   'webui.failed_stop_session': 'Failed to stop session',
   'webui.failed_restart_session': 'Failed to restart session',
   'webui.failed_list_dir': 'Failed to read directory',
+  'webui.failed_create_dir': 'Failed to create directory',
   'webui.failed_set_dir': 'Path access denied',
 
   // Token auth page

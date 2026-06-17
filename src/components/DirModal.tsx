@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 
 interface Props {
@@ -10,8 +10,10 @@ interface Props {
   onClose: () => void;
   onEnter: (name: string) => void;
   onGoUp: () => void;
+  onCreate: (name: string) => Promise<void>;
   onSelect: (dir: string) => void;
   onToggleHidden: () => void;
+  creating: boolean;
 }
 
 export const DirModal: React.FC<Props> = ({
@@ -23,16 +25,32 @@ export const DirModal: React.FC<Props> = ({
   onClose,
   onEnter,
   onGoUp,
+  onCreate,
   onSelect,
   onToggleHidden,
+  creating,
 }) => {
   const { t } = useI18n();
+  const [newDirName, setNewDirName] = useState('');
 
   useEffect(() => {
     if (!error) return;
     const timer = setTimeout(() => onErrorChange(''), 3000);
     return () => clearTimeout(timer);
   }, [error, onErrorChange]);
+
+  useEffect(() => {
+    setNewDirName('');
+  }, [currentDir]);
+
+  const submitNewDir = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newDirName.trim();
+    if (!name || creating) return;
+    await onCreate(name);
+    setNewDirName('');
+  };
+
   // Also hide .. when at a Windows drive root (e.g. C:\)
   const isRoot =
     currentDir === '~' ||
@@ -66,6 +84,18 @@ export const DirModal: React.FC<Props> = ({
             {error}
           </div>
         )}
+        <form className="dir-create-row" onSubmit={submitNewDir}>
+          <input
+            value={newDirName}
+            onChange={(e) => setNewDirName(e.target.value)}
+            placeholder={t('dir.new_project_placeholder')}
+            disabled={creating}
+            autoComplete="off"
+          />
+          <button type="submit" disabled={!newDirName.trim() || creating}>
+            {creating ? t('dir.creating') : t('dir.create_project')}
+          </button>
+        </form>
         <div className="dir-list">
           {!isRoot && (
             <div className="dir-item" onClick={onGoUp}>

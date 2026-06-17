@@ -11,6 +11,7 @@ export const zh: Record<TranslationKey, string> = {
   'app.failed_start': '启动失败',
   'app.failed_stop': '停止会话失败',
   'app.failed_list_dir': '列出目录失败',
+  'app.failed_create_dir': '创建目录失败',
   'app.dir_set_to': '目录已设置为: {dir}',
   'app.failed_set_dir': '设置目录失败',
   'app.config_saved': '配置已保存',
@@ -172,6 +173,9 @@ export const zh: Record<TranslationKey, string> = {
   'dir.items': '{count} 个项目',
   'dir.select': '选择目录',
   'dir.show_hidden': '显示隐藏',
+  'dir.create_project': '新建',
+  'dir.creating': '新建中...',
+  'dir.new_project_placeholder': '新项目文件夹',
 
   // SettingsModal
   'settings.title': '设置',
@@ -272,6 +276,7 @@ export const zh: Record<TranslationKey, string> = {
   'webui.failed_stop_session': '停止会话失败',
   'webui.failed_restart_session': '重启会话失败',
   'webui.failed_list_dir': '读取目录失败',
+  'webui.failed_create_dir': '创建目录失败',
   'webui.failed_set_dir': '路径拒绝访问',
 
   // Token auth page
