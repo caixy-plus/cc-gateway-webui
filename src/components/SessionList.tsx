@@ -29,7 +29,7 @@ function stripMarkdown(text: string): string {
     .replace(/`(.+?)`/g, '$1');
 }
 
-const KNOWN_PLATFORM_FILTER_KEYS = new Set(['webui', 'feishu', 'telegram', 'qq']);
+const KNOWN_PLATFORM_FILTER_KEYS = new Set(['webui', 'feishu', 'telegram']);
 
 function platformFilterTitle(
   p: PlatformFilter,
@@ -48,7 +48,6 @@ function platformIcon(platform: string): string {
     case 'webui': return '💻';
     case 'feishu': return '📱';
     case 'telegram': return '✈️';
-    case 'qq': return '🐧';
     default: return '🔌';
   }
 }

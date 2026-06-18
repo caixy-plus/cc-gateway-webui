@@ -351,7 +351,7 @@ const App: React.FC = () => {
     try {
       const currentConfig = config || (await loadConfig());
       const defaultDir = currentConfig?.default_dir || '~';
-      const data = await api.createSession('New Session', defaultDir);
+      const data = await api.createSession(defaultDir);
       if (data.session) {
         setSessions((prev) => [...prev, data.session!]);
         newSessionRef.current = data.session.id;

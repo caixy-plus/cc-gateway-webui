@@ -13,16 +13,9 @@ const emptyPlatforms = (): PlatformsMap => ({
     proxy: '',
     require_pairing: true,
   },
-  qq: {
-    enabled: false,
-    app_id: '',
-    app_secret: '',
-    sandbox: false,
-    require_pairing: true,
-  },
 });
 
-/** Accept legacy top-level `feishu` / `telegram` / `qq` from older API responses. */
+/** Accept legacy top-level `feishu` / `telegram` from older API responses. */
 export function normalizeGatewayConfig(raw: GatewayConfig): GatewayConfig {
   if (raw.platforms) {
     return raw;
@@ -30,14 +23,12 @@ export function normalizeGatewayConfig(raw: GatewayConfig): GatewayConfig {
   const legacy = raw as GatewayConfig & {
     feishu?: PlatformsMap['feishu'];
     telegram?: PlatformsMap['telegram'];
-    qq?: PlatformsMap['qq'];
   };
   return {
     ...raw,
     platforms: {
       feishu: legacy.feishu ?? emptyPlatforms().feishu,
       telegram: legacy.telegram ?? emptyPlatforms().telegram,
-      qq: legacy.qq ?? emptyPlatforms().qq,
     },
   };
 }

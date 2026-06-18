@@ -149,10 +149,13 @@ export const api = {
     return fetchJSON<{ sessions: Session[] }>(`/api/sessions${qs}`);
   },
 
-  createSession: (title: string, workDir = '~') =>
+  createSession: (workDir = '~', title?: string) =>
     fetchJSON<{ session?: Session; error?: string }>('/api/sessions', {
       method: 'POST',
-      body: JSON.stringify({ title, work_dir: workDir }),
+      body: JSON.stringify({
+        ...(title !== undefined ? { title } : {}),
+        work_dir: workDir,
+      }),
     }),
 
   uploadSessionFile: async (

@@ -26,7 +26,7 @@ test.describe('Session CRUD', () => {
     await expect(items).toHaveCount(1);
 
     const firstItem = items.first();
-    await expect(firstItem).toContainText('New Session');
+    await expect(firstItem).not.toBeEmpty();
 
     // Activate session by clicking
     await firstItem.click();

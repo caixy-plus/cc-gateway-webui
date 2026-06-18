@@ -108,7 +108,6 @@ export const PairingModal: React.FC<Props> = ({ onClose }) => {
 
   const platformColor = (platform: string) => {
     if (platform === 'feishu') return 'var(--accent)';
-    if (platform === 'qq') return 'var(--yellow, #e8b923)';
     return 'var(--cyan)';
   };
 

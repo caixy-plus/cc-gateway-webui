@@ -126,18 +126,9 @@ export interface TelegramPlatformConfig {
   require_pairing: boolean;
 }
 
-export interface QqPlatformConfig {
-  enabled: boolean;
-  app_id: string;
-  app_secret: string;
-  sandbox: boolean;
-  require_pairing: boolean;
-}
-
 export interface PlatformsMap {
   feishu: FeishuPlatformConfig;
   telegram: TelegramPlatformConfig;
-  qq: QqPlatformConfig;
 }
 
 export type ThemeMode = 'auto' | 'dark' | 'light';
